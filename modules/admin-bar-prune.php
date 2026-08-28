@@ -10,9 +10,12 @@ return [
 	'default'     => true,
 	'init'        => function () {
 		add_action( 'admin_bar_menu', function ( $bar ) {
-			$bar->remove_node( 'wp-logo' );
-			$bar->remove_node( 'comments' );
-			$bar->remove_node( 'updates' );
+			if ( ! $bar instanceof WP_Admin_Bar ) {
+				return;
+			}
+			foreach ( [ 'wp-logo', 'comments', 'updates' ] as $node ) {
+				$bar->remove_node( $node );
+			}
 		}, 999 );
 	},
 ];

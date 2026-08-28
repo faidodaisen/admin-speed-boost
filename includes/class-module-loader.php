@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WPASB_Module_Loader {
+
 	private $modules = [];
 
 	public function __construct() {
@@ -26,19 +27,63 @@ class WPASB_Module_Loader {
 
 	private function discover() {
 		$files = glob( WPASB_DIR . 'modules/*.php' );
-		if ( ! $files ) {
+		if ( ! is_array( $files ) || ! $files ) {
 			return;
 		}
+
 		sort( $files );
+
 		foreach ( $files as $file ) {
-			$module = include $file;
-			if ( is_array( $module ) && ! empty( $module['slug'] ) ) {
-				$this->modules[ $module['slug'] ] = $module;
+			if ( ! is_readable( $file ) ) {
+				continue;
 			}
+
+			$module = include $file;
+
+			if ( ! is_array( $module ) || empty( $module['slug'] ) || ! isset( $module['init'] ) ) {
+				continue;
+			}
+
+			$slug = sanitize_key( $module['slug'] );
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			$module['slug']        = $slug;
+			$module['name']        = isset( $module['name'] ) ? (string) $module['name'] : $slug;
+			$module['description'] = isset( $module['description'] ) ? (string) $module['description'] : '';
+			$module['default']     = ! empty( $module['default'] );
+
+			$this->modules[ $slug ] = $module;
 		}
 	}
 
+	/**
+	 * Modules with their labels translated.
+	 *
+	 * Only call this on or after `init`. Module files store plain English so that
+	 * discovery on `plugins_loaded` never triggers a just-in-time textdomain load.
+	 */
 	public function get_modules() {
+		$labels  = function_exists( 'wpasb_module_labels' ) ? wpasb_module_labels() : [];
+		$modules = $this->modules;
+
+		foreach ( $modules as $slug => $module ) {
+			if ( ! empty( $labels[ $slug ]['name'] ) ) {
+				$modules[ $slug ]['name'] = $labels[ $slug ]['name'];
+			}
+			if ( ! empty( $labels[ $slug ]['description'] ) ) {
+				$modules[ $slug ]['description'] = $labels[ $slug ]['description'];
+			}
+		}
+
+		return $modules;
+	}
+
+	/**
+	 * Raw module definitions with untranslated labels. Safe at any hook.
+	 */
+	public function get_raw_modules() {
 		return $this->modules;
 	}
 
@@ -50,12 +95,39 @@ class WPASB_Module_Loader {
 		return $defaults;
 	}
 
+	/**
+	 * Saved settings merged over defaults.
+	 *
+	 * Without this merge, a module added in a later plugin version would never run
+	 * on an existing install, because the stored option has no key for it.
+	 */
+	public function get_settings() {
+		$saved = get_option( WPASB_OPTION, [] );
+		if ( ! is_array( $saved ) ) {
+			$saved = [];
+		}
+
+		$settings = [];
+		foreach ( $this->get_defaults() as $slug => $default ) {
+			$settings[ $slug ] = array_key_exists( $slug, $saved ) ? ! empty( $saved[ $slug ] ) : $default;
+		}
+
+		return $settings;
+	}
+
 	public function load() {
-		$enabled = get_option( WPASB_OPTION, $this->get_defaults() );
+		$enabled = $this->get_settings();
+
 		foreach ( $this->modules as $slug => $module ) {
-			if ( ! empty( $enabled[ $slug ] ) && is_callable( $module['init'] ) ) {
-				call_user_func( $module['init'] );
+			if ( empty( $enabled[ $slug ] ) ) {
+				continue;
 			}
+
+			if ( ! is_callable( $module['init'] ) ) {
+				continue;
+			}
+
+			call_user_func( $module['init'] );
 		}
 	}
 }
