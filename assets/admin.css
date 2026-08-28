@@ -1,0 +1,395 @@
+/* WP Admin Speedboost — Uber-inspired admin UI
+   Scope: Settings → Admin Speedboost only
+   Palette: #000 / #fff strict duality, #4b4b4b body, #afafaf muted, #efefef chip
+   Radii:   8px cards, 999px pills, 50% circles
+   Shadows: 0.12 / 0.16 opacity max
+   Font:    Inter (UberMove substitute), system-ui fallback
+*/
+
+.wpasb-page {
+	background: #ffffff;
+	color: #000000;
+	font-family: 'Inter', system-ui, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	min-height: 100vh;
+	margin: -10px 0 0 -20px;
+	padding: 0 0 64px 0;
+	font-size: 16px;
+	line-height: 1.5;
+}
+
+.wpasb-page * {
+	box-sizing: border-box;
+}
+
+/* WP admin chrome bleed-through reset */
+.wpasb-page h1,
+.wpasb-page h2,
+.wpasb-page h3 {
+	color: inherit;
+	padding: 0;
+}
+
+.wpasb-page p {
+	margin: 0;
+	padding: 0;
+}
+
+/* ============================================================
+   HERO — full-bleed black, billboard headline
+   ============================================================ */
+.wpasb-hero {
+	background: #000000;
+	color: #ffffff;
+	padding: 64px 32px;
+	margin-bottom: 48px;
+}
+
+.wpasb-hero-inner {
+	max-width: 1136px;
+	margin: 0 auto;
+}
+
+.wpasb-hero-title {
+	font-family: 'Inter', system-ui, sans-serif;
+	font-size: 52px;
+	font-weight: 700;
+	line-height: 1.23;
+	letter-spacing: -0.02em;
+	color: #ffffff;
+	margin: 0 0 12px 0;
+}
+
+.wpasb-hero-tagline {
+	font-size: 18px;
+	font-weight: 400;
+	line-height: 1.33;
+	color: #afafaf;
+	margin: 0;
+}
+
+/* ============================================================
+   CONTENT CONTAINERS
+   ============================================================ */
+.wpasb-form,
+.wpasb-info-section {
+	max-width: 1136px;
+	margin: 0 auto 48px;
+	padding: 0 32px;
+}
+
+.wpasb-section-title {
+	font-size: 36px;
+	font-weight: 700;
+	line-height: 1.22;
+	color: #000000;
+	margin: 0 0 8px 0;
+	border: none;
+	letter-spacing: -0.01em;
+}
+
+.wpasb-section-desc {
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 1.5;
+	color: #4b4b4b;
+	margin: 0 0 32px 0;
+}
+
+/* ============================================================
+   GRID + CARDS — content-dense, whisper-soft shadow
+   ============================================================ */
+.wpasb-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+	gap: 16px;
+	margin-bottom: 32px;
+}
+
+.wpasb-card {
+	background: #ffffff;
+	border-radius: 8px;
+	box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px;
+	padding: 24px;
+	transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.wpasb-card:hover {
+	box-shadow: rgba(0, 0, 0, 0.16) 0px 6px 20px;
+	transform: translateY(-1px);
+}
+
+.wpasb-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 12px;
+}
+
+.wpasb-card-title {
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 1.4;
+	color: #000000;
+	margin: 0;
+}
+
+.wpasb-card-desc {
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.5;
+	color: #4b4b4b;
+	margin: 0;
+}
+
+.wpasb-card-desc + .wpasb-card-desc,
+.wpasb-card-desc + .wpasb-code,
+.wpasb-card .wpasb-code {
+	margin-top: 12px;
+}
+
+/* ============================================================
+   TOGGLE — pill-shaped, black/chip-gray inversion
+   ============================================================ */
+.wpasb-toggle {
+	position: relative;
+	display: inline-block;
+	width: 48px;
+	height: 26px;
+	flex-shrink: 0;
+	cursor: pointer;
+	margin: 2px 0 0 0;
+}
+
+.wpasb-toggle input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+	position: absolute;
+}
+
+.wpasb-toggle-slider {
+	position: absolute;
+	inset: 0;
+	background: #efefef;
+	border-radius: 999px;
+	transition: background 0.2s ease;
+}
+
+.wpasb-toggle-slider::before {
+	content: '';
+	position: absolute;
+	height: 20px;
+	width: 20px;
+	left: 3px;
+	top: 3px;
+	background: #000000;
+	border-radius: 50%;
+	transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.wpasb-toggle input:checked + .wpasb-toggle-slider {
+	background: #000000;
+}
+
+.wpasb-toggle input:checked + .wpasb-toggle-slider::before {
+	background: #ffffff;
+	transform: translateX(22px);
+}
+
+.wpasb-toggle input:focus-visible + .wpasb-toggle-slider {
+	box-shadow: 0 0 0 2px #ffffff inset, 0 0 0 4px #000000;
+}
+
+/* ============================================================
+   BUTTONS — pill 999px, dual primary/secondary
+   ============================================================ */
+.wpasb-actions {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-top: 16px;
+}
+
+.wpasb-btn-primary,
+.wpasb-btn-secondary,
+.wpasb-btn-light {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	border-radius: 999px;
+	font-family: 'Inter', system-ui, sans-serif;
+	font-size: 14px;
+	font-weight: 500;
+	letter-spacing: 0.06em;
+	padding: 14px 28px;
+	cursor: pointer;
+	transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+	text-decoration: none;
+	line-height: 1;
+	min-height: 44px;
+	text-transform: uppercase;
+}
+
+.wpasb-btn-primary {
+	background: #000000;
+	color: #ffffff;
+}
+
+.wpasb-btn-primary:hover {
+	background: #1f1f1f;
+	color: #ffffff;
+}
+
+.wpasb-btn-primary:active {
+	transform: translateY(1px);
+}
+
+.wpasb-btn-primary:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px #ffffff inset, 0 0 0 4px #000000;
+}
+
+.wpasb-btn-secondary {
+	background: #ffffff;
+	color: #000000;
+	border: 1px solid #000000;
+}
+
+.wpasb-btn-secondary:hover {
+	background: #e2e2e2;
+	color: #000000;
+}
+
+.wpasb-btn-light {
+	background: #ffffff;
+	color: #000000;
+	box-shadow: rgba(0, 0, 0, 0.16) 0px 2px 8px 0px;
+}
+
+.wpasb-btn-light:hover {
+	background: #f3f3f3;
+	color: #000000;
+	transform: translateY(-1px);
+}
+
+/* ============================================================
+   DARK SECTION — full-bleed black for DB cleanup CTA
+   ============================================================ */
+.wpasb-dark-section {
+	background: #000000;
+	color: #ffffff;
+	padding: 64px 32px;
+	margin: 48px 0;
+}
+
+.wpasb-dark-inner {
+	max-width: 1136px;
+	margin: 0 auto;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 32px;
+	flex-wrap: wrap;
+}
+
+.wpasb-dark-text {
+	flex: 1 1 480px;
+}
+
+.wpasb-dark-title {
+	font-size: 32px;
+	font-weight: 700;
+	line-height: 1.25;
+	color: #ffffff;
+	margin: 0 0 8px 0;
+	letter-spacing: -0.01em;
+}
+
+.wpasb-dark-desc {
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 1.5;
+	color: #afafaf;
+	max-width: 520px;
+	margin: 0;
+}
+
+.wpasb-cleanup-form {
+	margin: 0;
+}
+
+/* ============================================================
+   CODE BLOCKS — chip-gray block, mono font
+   ============================================================ */
+.wpasb-code {
+	display: block;
+	background: #efefef;
+	color: #000000;
+	border-radius: 8px;
+	padding: 16px 20px;
+	font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+	font-size: 13px;
+	line-height: 1.55;
+	overflow-x: auto;
+	white-space: pre;
+	margin: 12px 0 0 0;
+}
+
+.wpasb-card code {
+	background: #efefef;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 13px;
+	font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+	color: #000000;
+}
+
+/* ============================================================
+   ADMIN NOTICES — re-radius to match
+   ============================================================ */
+.wpasb-page .notice {
+	max-width: 1072px;
+	margin: 0 auto 16px auto;
+	border-radius: 8px;
+	border-left-width: 4px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 782px) {
+	.wpasb-page {
+		margin-left: -10px;
+	}
+	.wpasb-hero {
+		padding: 48px 20px;
+	}
+	.wpasb-hero-title {
+		font-size: 36px;
+	}
+	.wpasb-form,
+	.wpasb-info-section {
+		padding: 0 20px;
+	}
+	.wpasb-section-title {
+		font-size: 28px;
+	}
+	.wpasb-grid {
+		grid-template-columns: 1fr;
+	}
+	.wpasb-dark-section {
+		padding: 48px 20px;
+	}
+	.wpasb-dark-inner {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.wpasb-dark-title {
+		font-size: 28px;
+	}
+}
