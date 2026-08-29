@@ -4,15 +4,15 @@ Tags: performance, admin, optimization, speed, comments
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Modular wp-admin performance booster. 12 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
+Modular wp-admin performance booster. 13 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
 
 == Description ==
 
-WP Admin Speedboost packages 12 individually toggle-able admin optimisations into a single settings page.
+WP Admin Speedboost packages 13 individually toggle-able admin optimisations into a single settings page.
 
 Every module is off-switchable, nothing is hidden, and no external service is contacted.
 
@@ -30,6 +30,23 @@ Every module is off-switchable, nothing is hidden, and no external service is co
 * Disable Application Passwords - off by default, since turning it on breaks REST integrations
 * Hide Vendor Promo Notices - suppress promo banners while keeping errors, the Updates screen and Site Health untouched
 * Silence Imagick Site Health Nag - hidden only when GD or Imagick is actually available
+* Hide Login URL - off by default. Moves wp-login.php to a slug you choose and sends logged-out visitors who hit wp-admin or wp-login.php to a 404.
+
+= Hide Login URL =
+
+Set the slug under Settings > Admin Speedboost > Login URL. With the module on:
+
+* `example.com/wp-login.php` returns a 404
+* `example.com/wp-admin/` redirects logged-out visitors to the redirect slug (default `404`)
+* `example.com/your-slug/` serves the normal WordPress login form
+* Logged-in users who visit the slug are sent to the dashboard
+* Password-protected posts, `admin-ajax.php`, `admin-post.php`, cron and WP-CLI keep working
+
+**Bookmark the new login URL before you save.** Reserved slugs and anything containing `wp-login` are rejected and the previous value is kept.
+
+The module switches itself off and shows a notice if WPS Hide Login or Rename wp-login.php is active, so the two cannot fight over the same routes.
+
+This is a URL obfuscation measure, not authentication. Keep using strong passwords and two-factor.
 
 = Database Cleanup =
 
@@ -57,6 +74,8 @@ The settings page also displays recommended wp-config.php constants and live OPc
 * `wpasb_hidden_notice_css` - CSS used to hide vendor notices
 * `wpasb_cleanup_batch_size` - revision deletion batch size
 * `wpasb_optimize_innodb` - set true to OPTIMIZE InnoDB tables as well
+* `wpasb_logged_in_redirect` - where an already logged-in visitor to the login slug is sent
+* `wpasb_hide_login_signup_enable` - return true to allow wp-signup.php and wp-activate.php
 
 == Installation ==
 
@@ -79,11 +98,22 @@ No. The check runs after authentication, so any logged-in user or authenticated 
 
 Turning it on breaks Jetpack, mobile apps and any REST client that authenticates with an application password. It is opt-in so nothing breaks silently.
 
+= What if I forget my hidden login URL? =
+
+Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename the plugin folder over FTP. Either restores wp-login.php immediately. You can also read the slug from the `wpasb_login_slug` row in the options table.
+
 = Why does cleanup report that InnoDB tables were skipped? =
 
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.2.0 =
+* Added: Hide Login URL module. Moves wp-login.php to a custom slug and sends logged-out wp-admin and wp-login.php requests to a redirect slug. Off by default.
+* Added: Login slug and redirect slug fields on the settings page, saved with the existing Save button.
+* Added: Conflict detection. The module stays off and shows a notice when WPS Hide Login or Rename wp-login.php is active.
+* Added: Login slug validation rejects WordPress query vars and anything containing `wp-login`, keeping the previous value instead of locking you out.
+* Changed: Uninstall now also removes the two login options.
 
 = 1.1.0 =
 * Fixed: Heartbeat module ran on `init`, where `get_current_screen()` is always null. Heartbeat was therefore removed on every admin screen including the editor, breaking autosave and post locking.

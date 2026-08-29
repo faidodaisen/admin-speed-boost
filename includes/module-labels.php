@@ -66,5 +66,9 @@ function wpasb_module_labels() {
 			'name'        => __( 'Silence Imagick Site Health Nag', 'wp-admin-speedboost' ),
 			'description' => __( 'Remove the "Imagick not installed" recommendation from Site Health when GD is available. GD ships with PHP and handles every core image operation.', 'wp-admin-speedboost' ),
 		],
+		'hide-login'            => [
+			'name'        => __( 'Hide Login URL', 'wp-admin-speedboost' ),
+			'description' => __( 'Move wp-login.php to a custom slug and send logged-out visitors hitting wp-admin or wp-login.php to a 404. Set the slug in the Login URL field below. Bookmark the new URL before you save.', 'wp-admin-speedboost' ),
+		],
 	];
 }

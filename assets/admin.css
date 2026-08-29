@@ -393,3 +393,20 @@
 		font-size: 28px;
 	}
 }
+
+/* Hide Login fields */
+.wpasb-login-card {
+	margin-top: 24px;
+}
+
+.wpasb-login-card .wpasb-field {
+	margin: 16px 0 4px;
+}
+
+.wpasb-login-card .wpasb-field label {
+	font-weight: 600;
+}
+
+.wpasb-login-card .wpasb-field input[type="text"] {
+	max-width: 260px;
+}

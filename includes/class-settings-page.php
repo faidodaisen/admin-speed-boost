@@ -40,6 +40,82 @@ class WPASB_Settings_Page {
 				'show_in_rest'      => false,
 			]
 		);
+
+		register_setting(
+			'wpasb_settings',
+			WPASB_Hide_Login::OPT_SLUG,
+			[
+				'type'              => 'string',
+				'sanitize_callback' => [ $this, 'sanitize_login_slug' ],
+				'default'           => WPASB_Hide_Login::default_slug(),
+				'show_in_rest'      => false,
+			]
+		);
+
+		register_setting(
+			'wpasb_settings',
+			WPASB_Hide_Login::OPT_REDIRECT,
+			[
+				'type'              => 'string',
+				'sanitize_callback' => [ $this, 'sanitize_redirect_slug' ],
+				'default'           => WPASB_Hide_Login::default_redirect(),
+				'show_in_rest'      => false,
+			]
+		);
+	}
+
+	/**
+	 * A bad login slug locks everyone out, so reject collisions and keep the old value.
+	 */
+	public function sanitize_login_slug( $input ) {
+		$current = get_option( WPASB_Hide_Login::OPT_SLUG, WPASB_Hide_Login::default_slug() );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $current;
+		}
+
+		$slug = sanitize_title_with_dashes( (string) $input );
+
+		if ( '' === $slug ) {
+			$slug = WPASB_Hide_Login::default_slug();
+		}
+
+		if ( false !== strpos( $slug, 'wp-login' ) || in_array( $slug, WPASB_Hide_Login::forbidden_slugs(), true ) ) {
+			add_settings_error(
+				WPASB_Hide_Login::OPT_SLUG,
+				'wpasb_login_slug_invalid',
+				__( 'That login slug is reserved by WordPress. The previous value was kept.', 'wp-admin-speedboost' )
+			);
+
+			return $current;
+		}
+
+		if ( $slug !== $current ) {
+			add_settings_error(
+				WPASB_Hide_Login::OPT_SLUG,
+				'wpasb_login_slug_updated',
+				sprintf(
+					/* translators: %s: the new login URL */
+					__( 'Your login page is now at %s. Bookmark it.', 'wp-admin-speedboost' ),
+					esc_url( home_url( '/' ) . $slug )
+				),
+				'success'
+			);
+		}
+
+		return $slug;
+	}
+
+	public function sanitize_redirect_slug( $input ) {
+		$current = get_option( WPASB_Hide_Login::OPT_REDIRECT, WPASB_Hide_Login::default_redirect() );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $current;
+		}
+
+		$slug = sanitize_title_with_dashes( (string) $input );
+
+		return '' !== $slug ? $slug : WPASB_Hide_Login::default_redirect();
 	}
 
 	/**
@@ -124,6 +200,8 @@ class WPASB_Settings_Page {
 					<?php endforeach; ?>
 				</div>
 
+				<?php $this->render_login_fields( $enabled ); ?>
+
 				<div class="wpasb-actions">
 					<button type="submit" class="wpasb-btn-primary"><?php esc_html_e( 'SAVE CHANGES', 'wp-admin-speedboost' ); ?></button>
 				</div>
@@ -177,6 +255,60 @@ class WPASB_Settings_Page {
 				<?php $this->render_opcache_card(); ?>
 			</div>
 
+		</div>
+		<?php
+	}
+
+	/**
+	 * Login slug fields. Rendered inside the module form so one Save covers both.
+	 */
+	private function render_login_fields( array $enabled ) {
+		$home      = trailingslashit( home_url() );
+		$permalink = (bool) get_option( 'permalink_structure' );
+		$slug      = get_option( WPASB_Hide_Login::OPT_SLUG, WPASB_Hide_Login::default_slug() );
+		$redirect  = get_option( WPASB_Hide_Login::OPT_REDIRECT, WPASB_Hide_Login::default_redirect() );
+		$active    = ! empty( $enabled['hide-login'] );
+		?>
+		<div class="wpasb-card wpasb-login-card">
+			<h3 class="wpasb-card-title"><?php esc_html_e( 'Login URL', 'wp-admin-speedboost' ); ?></h3>
+			<p class="wpasb-card-desc">
+				<?php if ( $active ) : ?>
+					<?php
+					printf(
+						/* translators: %s: current login URL */
+						esc_html__( 'Active. Your login page is %s. Bookmark it before changing anything.', 'wp-admin-speedboost' ),
+						'<strong><code>' . esc_html( $home . ( $permalink ? '' : '?' ) . $slug ) . '</code></strong>'
+					);
+					?>
+				<?php else : ?>
+					<?php esc_html_e( 'These take effect once the Hide Login URL module above is switched on.', 'wp-admin-speedboost' ); ?>
+				<?php endif; ?>
+			</p>
+
+			<p class="wpasb-field">
+				<label for="wpasb-login-slug"><?php esc_html_e( 'Login slug', 'wp-admin-speedboost' ); ?></label><br>
+				<code><?php echo esc_html( $home . ( $permalink ? '' : '?' ) ); ?></code>
+				<input
+					type="text"
+					id="wpasb-login-slug"
+					name="<?php echo esc_attr( WPASB_Hide_Login::OPT_SLUG ); ?>"
+					value="<?php echo esc_attr( $slug ); ?>"
+					class="regular-text"
+				>
+			</p>
+
+			<p class="wpasb-field">
+				<label for="wpasb-login-redirect"><?php esc_html_e( 'Redirect slug', 'wp-admin-speedboost' ); ?></label><br>
+				<code><?php echo esc_html( $home . ( $permalink ? '' : '?' ) ); ?></code>
+				<input
+					type="text"
+					id="wpasb-login-redirect"
+					name="<?php echo esc_attr( WPASB_Hide_Login::OPT_REDIRECT ); ?>"
+					value="<?php echo esc_attr( $redirect ); ?>"
+					class="regular-text"
+				>
+			</p>
+			<p class="wpasb-card-desc"><?php esc_html_e( 'Where logged-out visitors land when they hit wp-login.php or wp-admin. Leave as 404 unless you have a real page for it.', 'wp-admin-speedboost' ); ?></p>
 		</div>
 		<?php
 	}
