@@ -4,15 +4,15 @@ Tags: performance, admin, optimization, speed, comments
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Modular wp-admin performance booster. 13 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
+Modular wp-admin performance booster. 15 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
 
 == Description ==
 
-WP Admin Speedboost packages 13 individually toggle-able admin optimisations into a single settings page.
+WP Admin Speedboost packages 15 individually toggle-able admin optimisations into a single settings page.
 
 Every module is off-switchable, nothing is hidden, and no external service is contacted.
 
@@ -31,6 +31,8 @@ Every module is off-switchable, nothing is hidden, and no external service is co
 * Hide Vendor Promo Notices - suppress promo banners while keeping errors, the Updates screen and Site Health untouched
 * Silence Imagick Site Health Nag - hidden only when GD or Imagick is actually available
 * Hide Login URL - off by default. Moves wp-login.php to a slug you choose and sends logged-out visitors who hit wp-admin or wp-login.php to a 404.
+* Enable Classic Editor - on by default. Restores the TinyMCE editor for posts, pages and widgets.
+* Disable XML-RPC - on by default. Blocks xmlrpc.php, pingbacks and the RSD link.
 
 = Hide Login URL =
 
@@ -107,6 +109,10 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.3.0 =
+* Added: Enable Classic Editor module. On by default. Forces the classic editor for all post types and the classic widgets screen. Stands down if the Classic Editor plugin is active.
+* Added: Disable XML-RPC module. On by default. Disables xmlrpc_enabled, empties the method list, returns 403 on any XML-RPC call, removes the RSD and WLW links, strips the X-Pingback header and closes pings.
 
 = 1.2.0 =
 * Added: Hide Login URL module. Moves wp-login.php to a custom slug and sends logged-out wp-admin and wp-login.php requests to a redirect slug. Off by default.
