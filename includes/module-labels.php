@@ -74,6 +74,10 @@ function wpasb_module_labels() {
 			'name'        => __( 'Disable XML-RPC', 'wp-admin-speedboost' ),
 			'description' => __( 'Turn off xmlrpc.php, pingbacks and the RSD link. Blocks a common brute-force and DDoS amplification target. Turn this OFF if you use the WordPress mobile app, Jetpack, or a remote publishing client.', 'wp-admin-speedboost' ),
 		],
+		'duplicate-post'        => [
+			'name'        => __( 'Duplicate Page & Post', 'wp-admin-speedboost' ),
+			'description' => __( 'Adds a Duplicate link to every post, page and custom post type list, plus a "Copy to a new draft" button in the editor. The copy carries content, taxonomies and custom fields, and is always saved as a draft.', 'wp-admin-speedboost' ),
+		],
 		'hide-login'            => [
 			'name'        => __( 'Hide Login URL', 'wp-admin-speedboost' ),
 			'description' => __( 'Move wp-login.php to a custom slug and send logged-out visitors hitting wp-admin or wp-login.php to a 404. Set the slug in the Login URL field below. Bookmark the new URL before you save.', 'wp-admin-speedboost' ),

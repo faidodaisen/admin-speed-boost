@@ -1,18 +1,18 @@
 === WP Admin Speedboost ===
 Contributors: fidodesign
-Tags: performance, admin, optimization, speed, comments
+Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Modular wp-admin performance booster. 15 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
+Modular wp-admin performance booster. 16 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
 
 == Description ==
 
-WP Admin Speedboost packages 15 individually toggle-able admin optimisations into a single settings page.
+WP Admin Speedboost packages 16 individually toggle-able admin optimisations into a single settings page.
 
 Every module is off-switchable, nothing is hidden, and no external service is contacted.
 
@@ -33,6 +33,23 @@ Every module is off-switchable, nothing is hidden, and no external service is co
 * Hide Login URL - off by default. Moves wp-login.php to a slug you choose and sends logged-out visitors who hit wp-admin or wp-login.php to a 404.
 * Enable Classic Editor - on by default. Restores the TinyMCE editor for posts, pages and widgets.
 * Disable XML-RPC - on by default. Blocks xmlrpc.php, pingbacks and the RSD link.
+* Duplicate Page & Post - on by default. Adds a Duplicate row action and a "Copy to a new draft" editor button.
+
+= Duplicate Page & Post =
+
+With the module on, every post, page and custom post type list gets a **Duplicate** link next to Edit and Trash, and the editor gains a **Copy to a new draft** button in the Publish box.
+
+The copy carries over content, excerpt, taxonomies, custom fields, page template, menu order, parent and comment status. It is always created as a **draft** owned by the current user, so nothing goes live by accident.
+
+Deliberately not copied:
+
+* the slug, so the copy never collides with the original's canonical URL
+* `_edit_lock` and `_edit_last`, which would make the copy look locked by another user
+* trash and old-slug meta
+
+Only users who can already create that post type see the link, and the action is nonce-protected. Attachments, revisions, reusable blocks, navigation, ACF field groups and order-type post types are excluded, because copying those produces broken records rather than useful drafts.
+
+The module switches itself off and shows a notice if Yoast Duplicate Post, Duplicate Page, Post Duplicator or Duplicate Page and Post is active.
 
 = Hide Login URL =
 
@@ -78,6 +95,10 @@ The settings page also displays recommended wp-config.php constants and live OPc
 * `wpasb_optimize_innodb` - set true to OPTIMIZE InnoDB tables as well
 * `wpasb_logged_in_redirect` - where an already logged-in visitor to the login slug is sent
 * `wpasb_hide_login_signup_enable` - return true to allow wp-signup.php and wp-activate.php
+* `wpasb_duplicate_post_types` - post types that get a Duplicate action
+* `wpasb_duplicate_skipped_meta` - meta keys not carried into the copy
+* `wpasb_duplicate_title_suffix` - the suffix appended to a copy's title, default `(Copy)`
+* `wpasb_post_duplicated` - action fired after a copy is created, receives the new ID and the source post
 
 == Installation ==
 
@@ -109,6 +130,13 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.4.0 =
+* Added: Duplicate Page & Post module. On by default. Adds a Duplicate row action to every post, page and custom post type list, plus a "Copy to a new draft" button in the editor.
+* Added: Copies carry content, excerpt, taxonomies, custom fields, template, menu order, parent and comment status, and are always created as drafts owned by the current user.
+* Added: Conflict detection. The module stays off and shows a notice when Yoast Duplicate Post, Duplicate Page, Post Duplicator or Duplicate Page and Post is active.
+* Added: Filters `wpasb_duplicate_post_types`, `wpasb_duplicate_skipped_meta`, `wpasb_duplicate_title_suffix`, and the `wpasb_post_duplicated` action.
+* Changed: Uninstall now also removes the `_wpasb_duplicate_of` provenance meta.
 
 = 1.3.0 =
 * Added: Enable Classic Editor module. On by default. Forces the classic editor for all post types and the classic widgets screen. Stands down if the Classic Editor plugin is active.

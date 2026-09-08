@@ -28,6 +28,10 @@ function wpasb_uninstall_cleanup() {
 	foreach ( $user_transients as $option_name ) {
 		delete_option( $option_name );
 	}
+
+	// Provenance meta written by the Duplicate module. Harmless if left, but it
+	// is plugin-owned data, so it goes too.
+	delete_post_meta_by_key( '_wpasb_duplicate_of' );
 }
 
 if ( is_multisite() ) {
