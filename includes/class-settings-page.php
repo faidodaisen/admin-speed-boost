@@ -90,7 +90,7 @@ class WPASB_Settings_Page {
 			return $current;
 		}
 
-		if ( $slug !== $current ) {
+		if ( $slug !== $current && ! $this->has_settings_error( 'wpasb_login_slug_updated' ) ) {
 			add_settings_error(
 				WPASB_Hide_Login::OPT_SLUG,
 				'wpasb_login_slug_updated',
@@ -104,6 +104,27 @@ class WPASB_Settings_Page {
 		}
 
 		return $slug;
+	}
+
+	/**
+	 * WordPress runs a setting's sanitize_callback more than once per request
+	 * (register_setting + the options.php update), so the same notice can be
+	 * queued twice. Bail if this code is already registered.
+	 */
+	private function has_settings_error( $code ) {
+		global $wp_settings_errors;
+
+		if ( empty( $wp_settings_errors ) || ! is_array( $wp_settings_errors ) ) {
+			return false;
+		}
+
+		foreach ( $wp_settings_errors as $error ) {
+			if ( isset( $error['code'] ) && $error['code'] === $code ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public function sanitize_redirect_slug( $input ) {
@@ -170,7 +191,11 @@ class WPASB_Settings_Page {
 				</div>
 			</div>
 
-			<?php settings_errors(); ?>
+			<?php
+			// WordPress already prints settings errors automatically on pages
+			// under Settings, so calling settings_errors() here would duplicate
+			// every notice.
+			?>
 
 			<form method="post" action="options.php" class="wpasb-form">
 				<?php settings_fields( 'wpasb_settings' ); ?>
