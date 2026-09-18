@@ -28,6 +28,12 @@ class WPASB_Custom_Login {
 		add_filter( 'login_headerurl', [ $this, 'header_url' ] );
 		add_filter( 'login_headertext', [ $this, 'header_text' ] );
 		add_filter( 'login_body_class', [ $this, 'body_class' ] );
+		add_filter( 'login_message', [ $this, 'branding' ] );
+
+		// The centered language switcher sits under the form and clashes with the
+		// split-screen layout. Hide it. Admins can still switch UI language under
+		// Users > Profile.
+		add_filter( 'login_display_language_dropdown', '__return_false' );
 	}
 
 	/**
@@ -83,6 +89,40 @@ class WPASB_Custom_Login {
 		return get_bloginfo( 'name', 'display' );
 	}
 
+	/**
+	 * Branding block printed above the form: the site logo (with rounded corners
+	 * and a soft shadow, so a plain square logo still looks intentional) next to
+	 * the site title and tagline.
+	 *
+	 * Rendered through the login_message filter. That filter runs inside
+	 * login_header(), which fires on every login action, so the branding shows on
+	 * the login, lost-password and reset screens alike. $message carries any
+	 * existing notice and must be preserved.
+	 */
+	public function branding( $message ) {
+		$logo    = $this->logo_url();
+		$title   = get_bloginfo( 'name', 'display' );
+		$tagline = get_bloginfo( 'description', 'display' );
+
+		ob_start();
+		?>
+		<div class="wpasb-brand">
+			<?php if ( $logo ) : ?>
+				<img class="wpasb-brand-logo" src="<?php echo esc_url( $logo ); ?>" alt="<?php echo esc_attr( $title ); ?>">
+			<?php endif; ?>
+			<div class="wpasb-brand-text">
+				<?php if ( $title ) : ?>
+					<span class="wpasb-brand-title"><?php echo esc_html( $title ); ?></span>
+				<?php endif; ?>
+				<?php if ( $tagline ) : ?>
+					<span class="wpasb-brand-tagline"><?php echo esc_html( $tagline ); ?></span>
+				<?php endif; ?>
+			</div>
+		</div>
+		<?php
+		return ob_get_clean() . $message;
+	}
+
 	public function body_class( $classes ) {
 		if ( ! is_array( $classes ) ) {
 			$classes = [];
@@ -100,17 +140,10 @@ class WPASB_Custom_Login {
 		);
 
 		$splash = $this->css_url( $this->splash_url() );
-		$logo   = $this->logo_url();
 
-		$css  = ".wpasb-custom-login::before{background-image:url('" . $splash . "');}";
-
-		if ( $logo ) {
-			$logo = $this->css_url( $logo );
-			$css .= ".wpasb-custom-login h1 a{background-image:url('" . $logo . "');background-size:contain;background-position:left center;width:100%;max-width:220px;height:72px;}";
-		} else {
-			// No logo image: show the site name as styled text instead of an empty box.
-			$css .= ".wpasb-custom-login h1 a{background-image:none;width:auto;height:auto;line-height:1.2;font-size:26px;font-weight:700;color:#111827;text-indent:0;overflow:visible;text-decoration:none;}";
-		}
+		// The default h1 logo is hidden by CSS in favour of the branding block
+		// printed via login_message, so only the splash needs an inline URL here.
+		$css = ".wpasb-custom-login::before{background-image:url('" . $splash . "');}";
 
 		wp_add_inline_style( 'wpasb-login', $css );
 	}

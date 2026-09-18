@@ -28,6 +28,7 @@
 	background-position: center;
 	background-repeat: no-repeat;
 	z-index: 0;
+	width: 65vw;
 }
 
 /* A soft dark gradient over the splash for depth and edge separation. */
@@ -36,7 +37,7 @@
 	position: fixed;
 	top: 0;
 	right: 0;
-	width: 50vw;
+	width: 65vw;
 	height: 100vh;
 	background: linear-gradient(120deg, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0) 45%);
 	z-index: 1;
@@ -47,8 +48,9 @@
 .wpasb-custom-login #login {
 	position: relative;
 	z-index: 2;
-	width: 50vw;
-	max-width: 460px;
+	width: 35vw;
+	min-width: 360px;
+	max-width: 520px;
 	min-height: 100vh;
 	margin: 0;
 	padding: 48px 56px;
@@ -58,15 +60,52 @@
 	justify-content: center;
 }
 
-/* Logo. The image URL + sizing is injected inline; here we handle layout. */
+/* The default wp-login h1 logo is replaced by the .wpasb-brand block below. */
 .wpasb-custom-login h1 {
-	margin: 0 0 28px;
+	display: none;
 }
 
-.wpasb-custom-login h1 a {
-	display: block;
-	margin: 0;
-	text-align: left;
+/* ----------------------------------------------------------- branding block */
+
+.wpasb-custom-login .wpasb-brand {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin: 0 0 30px;
+}
+
+.wpasb-custom-login .wpasb-brand-logo {
+	flex: 0 0 auto;
+	width: 56px;
+	height: 56px;
+	object-fit: cover;
+	border-radius: 14px;
+	background: #ffffff;
+	box-shadow: 0 6px 18px rgba(16, 24, 40, 0.16);
+	border: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+.wpasb-custom-login .wpasb-brand-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.wpasb-custom-login .wpasb-brand-title {
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #111827;
+	word-break: break-word;
+}
+
+.wpasb-custom-login .wpasb-brand-tagline {
+	margin-top: 3px;
+	font-size: 13px;
+	font-weight: 400;
+	line-height: 1.4;
+	color: #6b7280;
+	word-break: break-word;
 }
 
 /* -------------------------------------------------------------- the form */
