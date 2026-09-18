@@ -29,6 +29,7 @@ class WPASB_Custom_Login {
 		add_filter( 'login_headertext', [ $this, 'header_text' ] );
 		add_filter( 'login_body_class', [ $this, 'body_class' ] );
 		add_filter( 'login_message', [ $this, 'branding' ] );
+		add_action( 'login_footer', [ $this, 'credit' ] );
 
 		// The centered language switcher sits under the form and clashes with the
 		// split-screen layout. Hide it. Admins can still switch UI language under
@@ -90,9 +91,8 @@ class WPASB_Custom_Login {
 	}
 
 	/**
-	 * Branding block printed above the form: the site logo (with rounded corners
-	 * and a soft shadow, so a plain square logo still looks intentional) next to
-	 * the site title and tagline.
+	 * Branding block printed above the form: a compact logo lockup (logo, site
+	 * title, tagline) followed by a heading that names the current task.
 	 *
 	 * Rendered through the login_message filter. That filter runs inside
 	 * login_header(), which fires on every login action, so the branding shows on
@@ -108,19 +108,103 @@ class WPASB_Custom_Login {
 		?>
 		<div class="wpasb-brand">
 			<?php if ( $logo ) : ?>
-				<img class="wpasb-brand-logo" src="<?php echo esc_url( $logo ); ?>" alt="<?php echo esc_attr( $title ); ?>">
+				<span class="wpasb-brand-mark">
+					<img class="wpasb-brand-logo" src="<?php echo esc_url( $logo ); ?>" alt="<?php echo esc_attr( $title ); ?>">
+				</span>
 			<?php endif; ?>
-			<div class="wpasb-brand-text">
+			<span class="wpasb-brand-text">
 				<?php if ( $title ) : ?>
 					<span class="wpasb-brand-title"><?php echo esc_html( $title ); ?></span>
 				<?php endif; ?>
 				<?php if ( $tagline ) : ?>
 					<span class="wpasb-brand-tagline"><?php echo esc_html( $tagline ); ?></span>
 				<?php endif; ?>
-			</div>
+			</span>
 		</div>
 		<?php
+		$heading = $this->heading();
+		if ( $heading ) :
+			?>
+			<div class="wpasb-head">
+				<h2 class="wpasb-head-title"><?php echo esc_html( $heading['title'] ); ?></h2>
+				<p class="wpasb-head-sub"><?php echo esc_html( $heading['sub'] ); ?></p>
+			</div>
+			<?php
+		endif;
+
 		return ob_get_clean() . $message;
+	}
+
+	/**
+	 * Heading copy for the current login action. Each names the task and what to
+	 * do next, so the form is never the first thing the eye has to interpret.
+	 *
+	 * @return array{title:string, sub:string}|null
+	 */
+	private function heading() {
+		$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : 'login';
+
+		switch ( $action ) {
+			case 'lostpassword':
+			case 'retrievepassword':
+				return [
+					'title' => __( 'Reset your password', 'wp-admin-speedboost' ),
+					'sub'   => __( 'Enter your username or email and we will send you a reset link.', 'wp-admin-speedboost' ),
+				];
+
+			case 'rp':
+			case 'resetpass':
+				return [
+					'title' => __( 'Choose a new password', 'wp-admin-speedboost' ),
+					'sub'   => __( 'Pick something strong you have not used on this site before.', 'wp-admin-speedboost' ),
+				];
+
+			case 'register':
+				return [
+					'title' => __( 'Create your account', 'wp-admin-speedboost' ),
+					'sub'   => __( 'Register to get access to this site.', 'wp-admin-speedboost' ),
+				];
+
+			case 'login':
+				return [
+					'title' => __( 'Welcome back', 'wp-admin-speedboost' ),
+					'sub'   => __( 'Sign in to continue to your dashboard.', 'wp-admin-speedboost' ),
+				];
+		}
+
+		// Any other action (postpass, confirmaction, logout interstitials) keeps
+		// the lockup but skips a heading that might not describe what is shown.
+		return null;
+	}
+
+	/**
+	 * Small plugin credit pinned to the bottom-right corner, over the splash.
+	 *
+	 * Filterable so a site owner can change or remove it without editing the
+	 * plugin. Returning an empty string from the filter prints nothing.
+	 */
+	public function credit() {
+		$version = defined( 'WPASB_VERSION' ) ? WPASB_VERSION : '';
+		$parts   = explode( '.', $version );
+		$short   = count( $parts ) >= 2 ? $parts[0] . '.' . $parts[1] : $version;
+
+		$text = sprintf(
+			/* translators: %s: plugin version, for example 1.5 */
+			__( 'Admin Speedboost v%s', 'wp-admin-speedboost' ),
+			$short
+		);
+
+		/** Filter the login footer credit. Return an empty string to hide it. */
+		$text = apply_filters( 'wpasb_login_credit', $text, $version );
+
+		if ( ! is_string( $text ) || '' === trim( $text ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="wpasb-credit">%s</div>',
+			esc_html( $text )
+		);
 	}
 
 	public function body_class( $classes ) {
@@ -132,11 +216,18 @@ class WPASB_Custom_Login {
 	}
 
 	public function enqueue() {
+		// Version by file mtime, not the plugin version. During active theming the
+		// plugin version does not change between edits, so a plain WPASB_VERSION
+		// would let the browser serve a stale stylesheet. mtime busts the cache on
+		// every real edit and stays stable in production.
+		$css_path = WPASB_DIR . 'assets/login/login.css';
+		$ver      = file_exists( $css_path ) ? (string) filemtime( $css_path ) : WPASB_VERSION;
+
 		wp_enqueue_style(
 			'wpasb-login',
 			WPASB_URL . 'assets/login/login.css',
 			[ 'login' ],
-			WPASB_VERSION
+			$ver
 		);
 
 		$splash = $this->css_url( $this->splash_url() );

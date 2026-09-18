@@ -1,19 +1,66 @@
 /**
  * Custom Login Page styles.
  *
- * Split-screen layout: the wp-login form column on the left, a splash image on
+ * Split-screen layout: a 35vw form column on the left, a 65vw splash image on
  * the right (painted by body::before, image URL injected inline per-request).
- * The form itself is restyled Laravel-style: stacked labels, rounded inputs,
- * a clear focus ring, and a solid full-width button.
+ *
+ * The left column is the whole design. It runs on a 4px spacing scale, a single
+ * ink ramp derived from one slate hue, and one accent used only where the eye
+ * must land. Browser surfaces (selection, caret, scrollbar, focus ring) are
+ * themed from the same palette rather than left at the UA default.
  */
 
 .wpasb-custom-login {
+	/* Ink ramp: one hue, four stops. Everything grey descends from this. */
+	--wpasb-ink: #16181d;
+	--wpasb-ink-2: #3f444f;
+	--wpasb-ink-3: #6b7280;
+	--wpasb-line: #e3e5ea;
+	--wpasb-line-strong: #c9ccd4;
+
+	/* Accent. Used for the primary action, focus, and active links only. */
+	--wpasb-accent: #1b1d23;
+	--wpasb-accent-hover: #000000;
+	--wpasb-ring: rgba(22, 24, 29, 0.14);
+
+	--wpasb-radius: 10px;
+	--wpasb-radius-lg: 16px;
+
 	min-height: 100vh;
 	margin: 0;
 	background: #ffffff;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-	color: #1f2937;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: var(--wpasb-ink-2);
 }
+
+/* Browser surfaces. These ship with UA defaults that belong to no design. */
+.wpasb-custom-login ::selection {
+	background: var(--wpasb-ink);
+	color: #ffffff;
+}
+
+.wpasb-custom-login input {
+	caret-color: var(--wpasb-ink);
+}
+
+.wpasb-custom-login #login {
+	scrollbar-width: thin;
+	scrollbar-color: var(--wpasb-line-strong) transparent;
+}
+
+.wpasb-custom-login #login::-webkit-scrollbar {
+	width: 10px;
+}
+
+.wpasb-custom-login #login::-webkit-scrollbar-thumb {
+	background: var(--wpasb-line-strong);
+	border: 3px solid #ffffff;
+	border-radius: 999px;
+}
+
+/* ------------------------------------------------------------ the splash */
 
 /* Right-hand splash. Fixed so it stays put while the left column scrolls. */
 .wpasb-custom-login::before {
@@ -21,17 +68,17 @@
 	position: fixed;
 	top: 0;
 	right: 0;
-	width: 50vw;
+	width: 65vw;
 	height: 100vh;
-	background-color: #0f172a;
+	background-color: #0f1115;
 	background-size: cover;
 	background-position: center;
 	background-repeat: no-repeat;
 	z-index: 0;
-	width: 65vw;
 }
 
-/* A soft dark gradient over the splash for depth and edge separation. */
+/* A directional scrim: heaviest at the seam so the white column has an edge to
+   sit against, clearing entirely by mid-image so the photo stays the subject. */
 .wpasb-custom-login::after {
 	content: "";
 	position: fixed;
@@ -39,50 +86,75 @@
 	right: 0;
 	width: 65vw;
 	height: 100vh;
-	background: linear-gradient(120deg, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0) 45%);
+	background: linear-gradient(90deg, rgba(15, 17, 21, 0.30) 0%, rgba(15, 17, 21, 0.06) 22%, rgba(15, 17, 21, 0) 48%);
 	z-index: 1;
 	pointer-events: none;
 }
 
-/* Left column holds the whole wp-login stack, vertically centered. */
+/* -------------------------------------------------------- the left column */
+
+/* The column owns the full 35% band so it meets the splash seam with no dead
+   white strip. The form itself is capped for readability and centered inside
+   that band, which keeps the measure short on very wide screens. */
 .wpasb-custom-login #login {
 	position: relative;
 	z-index: 2;
+	box-sizing: border-box;
 	width: 35vw;
-	min-width: 360px;
-	max-width: 520px;
+	min-width: 380px;
 	min-height: 100vh;
 	margin: 0;
-	padding: 48px 56px;
-	box-sizing: border-box;
+	padding: 56px 48px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	align-items: center;
+	background: #ffffff;
 }
 
-/* The default wp-login h1 logo is replaced by the .wpasb-brand block below. */
+/* Everything inside the column shares one measure. */
+.wpasb-custom-login #login > * {
+	width: 100%;
+	max-width: 380px;
+}
+
+/* The default wp-login h1 logo is replaced by the .wpasb-brand lockup. */
 .wpasb-custom-login h1 {
 	display: none;
 }
 
-/* ----------------------------------------------------------- branding block */
+/* --------------------------------------------------------- brand lockup */
 
 .wpasb-custom-login .wpasb-brand {
 	display: flex;
 	align-items: center;
-	gap: 14px;
-	margin: 0 0 30px;
+	gap: 12px;
+	margin: 0 0 40px;
+}
+
+/* A fixed frame around the logo. Any aspect ratio, any background, and a bare
+   square logo still reads as a deliberate mark rather than a loose image. */
+.wpasb-custom-login .wpasb-brand-mark {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	padding: 6px;
+	box-sizing: border-box;
+	background: #ffffff;
+	border-radius: 12px;
+	box-shadow: 0 1px 2px rgba(22, 24, 29, 0.08), 0 6px 16px -4px rgba(22, 24, 29, 0.16);
 }
 
 .wpasb-custom-login .wpasb-brand-logo {
-	flex: 0 0 auto;
-	width: 56px;
-	height: 56px;
-	object-fit: cover;
-	border-radius: 14px;
-	background: #ffffff;
-	box-shadow: 0 6px 18px rgba(16, 24, 40, 0.16);
-	border: 1px solid rgba(16, 24, 40, 0.06);
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	width: auto;
+	height: auto;
+	object-fit: contain;
 }
 
 .wpasb-custom-login .wpasb-brand-text {
@@ -91,24 +163,58 @@
 	min-width: 0;
 }
 
+/* The site title is a label here, not a headline. The task heading below is the
+   headline, so this stays small, tight, and clamped to two lines. */
 .wpasb-custom-login .wpasb-brand-title {
-	font-size: 20px;
-	font-weight: 700;
-	line-height: 1.2;
-	color: #111827;
-	word-break: break-word;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+	letter-spacing: -0.005em;
+	color: var(--wpasb-ink);
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .wpasb-custom-login .wpasb-brand-tagline {
 	margin-top: 3px;
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 400;
-	line-height: 1.4;
-	color: #6b7280;
-	word-break: break-word;
+	line-height: 1.35;
+	color: var(--wpasb-ink-3);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
-/* -------------------------------------------------------------- the form */
+/* ------------------------------------------------------------- heading */
+
+.wpasb-custom-login .wpasb-head {
+	margin: 0 0 28px;
+}
+
+.wpasb-custom-login .wpasb-head-title {
+	margin: 0;
+	padding: 0;
+	font-size: 30px;
+	font-weight: 680;
+	line-height: 1.15;
+	letter-spacing: -0.025em;
+	color: var(--wpasb-ink);
+	text-wrap: balance;
+}
+
+.wpasb-custom-login .wpasb-head-sub {
+	margin: 8px 0 0;
+	padding: 0;
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--wpasb-ink-3);
+	text-wrap: pretty;
+}
+
+/* ---------------------------------------------------------------- form */
 
 .wpasb-custom-login form {
 	margin: 0;
@@ -119,17 +225,13 @@
 	overflow: visible;
 }
 
-.wpasb-custom-login form .forgetmenot {
-	margin-bottom: 20px;
-}
-
 .wpasb-custom-login form label {
 	display: block;
 	font-size: 13px;
-	font-weight: 600;
-	color: #374151;
-	margin-bottom: 6px;
+	font-weight: 550;
 	line-height: 1.4;
+	color: var(--wpasb-ink-2);
+	margin: 0 0 7px;
 }
 
 .wpasb-custom-login form .input,
@@ -137,192 +239,379 @@
 .wpasb-custom-login form input[type="password"],
 .wpasb-custom-login form input[type="email"] {
 	display: block;
-	width: 100%;
 	box-sizing: border-box;
+	width: 100%;
 	margin: 0 0 20px;
 	padding: 12px 14px;
-	font-size: 15px;
-	line-height: 1.4;
-	color: #111827;
-	background: #ffffff;
-	border: 1px solid #d1d5db;
-	border-radius: 10px;
-	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-	transition: border-color .15s ease, box-shadow .15s ease;
 	min-height: 46px;
+	font-size: 15px;
+	font-family: inherit;
+	line-height: 1.4;
+	color: var(--wpasb-ink);
+	background: #ffffff;
+	border: 1px solid var(--wpasb-line);
+	border-radius: var(--wpasb-radius);
+	box-shadow: none;
+	transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.wpasb-custom-login form .input::placeholder,
+.wpasb-custom-login form input[type="text"]::placeholder,
+.wpasb-custom-login form input[type="password"]::placeholder,
+.wpasb-custom-login form input[type="email"]::placeholder {
+	color: #9aa0ac;
+}
+
+.wpasb-custom-login form .input:hover,
+.wpasb-custom-login form input[type="text"]:hover,
+.wpasb-custom-login form input[type="password"]:hover,
+.wpasb-custom-login form input[type="email"]:hover {
+	border-color: var(--wpasb-line-strong);
 }
 
 .wpasb-custom-login form .input:focus,
 .wpasb-custom-login form input[type="text"]:focus,
 .wpasb-custom-login form input[type="password"]:focus,
 .wpasb-custom-login form input[type="email"]:focus {
-	border-color: #4f46e5;
-	box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
+	border-color: var(--wpasb-ink);
+	box-shadow: 0 0 0 3px var(--wpasb-ring);
 	outline: 2px solid transparent;
 	outline-offset: 2px;
 }
 
-/* Show/hide password toggle button that core injects inside the field wrap. */
+/* Show/hide password toggle that core injects inside the field wrap. */
 .wpasb-custom-login form .wp-pwd {
 	position: relative;
 }
 
-.wpasb-custom-login form .wp-pwd .button.wp-hide-pw {
-	position: absolute;
-	right: 6px;
-	top: 4px;
-	height: 38px;
-	margin: 0;
-	color: #6b7280;
-	background: transparent;
-	border: 0;
-	box-shadow: none;
-}
-
 .wpasb-custom-login form .wp-pwd input[type="text"],
 .wpasb-custom-login form .wp-pwd input[type="password"] {
-	padding-right: 46px;
+	padding-right: 48px;
 }
 
-/* Remember-me row. */
+.wpasb-custom-login form .wp-pwd .button.wp-hide-pw {
+	position: absolute;
+	right: 5px;
+	top: 5px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	margin: 0;
+	padding: 0;
+	color: var(--wpasb-ink-3);
+	background: transparent;
+	border: 0;
+	border-radius: 8px;
+	box-shadow: none;
+	transition: color .16s ease, background-color .16s ease;
+}
+
+.wpasb-custom-login form .wp-pwd .button.wp-hide-pw:hover {
+	color: var(--wpasb-ink);
+	background: #f4f5f7;
+}
+
+.wpasb-custom-login form .wp-pwd .button.wp-hide-pw:focus {
+	color: var(--wpasb-ink);
+	box-shadow: 0 0 0 3px var(--wpasb-ring);
+	outline: 2px solid transparent;
+}
+
+.wpasb-custom-login form .wp-pwd .button.wp-hide-pw .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+}
+
+/* Remember-me row. Sits tight to the button it qualifies.
+   wp-core-ui floats the checkbox and zeroes label margins, so the row is rebuilt
+   as a flex line rather than relying on the inherited float. */
+.wpasb-custom-login .forgetmenot {
+	display: flex;
+	align-items: center;
+	margin: 0 0 22px;
+	float: none;
+	line-height: 1.4;
+}
+
 .wpasb-custom-login .forgetmenot label {
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
-	font-weight: 500;
-	color: #4b5563;
 	margin: 0;
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--wpasb-ink-2);
+	cursor: pointer;
 }
 
 .wpasb-custom-login .forgetmenot input[type="checkbox"] {
-	width: 18px;
-	height: 18px;
+	flex: 0 0 auto;
+	width: 17px;
+	height: 17px;
+	margin: 0 9px 0 0;
+	float: none;
+	border: 1px solid var(--wpasb-line-strong);
 	border-radius: 5px;
-	border: 1px solid #d1d5db;
+	box-shadow: none;
+	transition: border-color .16s ease, background-color .16s ease;
 }
 
-/* Submit button, full-width and solid. */
+.wpasb-custom-login .forgetmenot input[type="checkbox"]:checked {
+	background: var(--wpasb-ink);
+	border-color: var(--wpasb-ink);
+}
+
+.wpasb-custom-login .forgetmenot input[type="checkbox"]:checked::before {
+	margin: -2px 0 0 -2px;
+	color: #ffffff;
+}
+
+.wpasb-custom-login .forgetmenot input[type="checkbox"]:focus {
+	border-color: var(--wpasb-ink);
+	box-shadow: 0 0 0 3px var(--wpasb-ring);
+	outline: 2px solid transparent;
+}
+
+/* Primary action. The one solid mass on the page, so the eye lands here. */
 .wpasb-custom-login .submit {
 	margin: 0;
+	padding: 0;
 }
 
 .wpasb-custom-login form .button-primary,
 .wpasb-custom-login #wp-submit {
 	display: block;
+	box-sizing: border-box;
 	width: 100%;
 	float: none;
-	margin: 8px 0 0;
-	padding: 12px 18px;
+	margin: 0;
+	padding: 13px 18px;
+	min-height: 48px;
 	font-size: 15px;
+	font-family: inherit;
 	font-weight: 600;
 	line-height: 1.4;
+	letter-spacing: -0.005em;
 	text-align: center;
 	text-shadow: none;
 	color: #ffffff;
-	background: #4f46e5;
-	border: 1px solid #4338ca;
-	border-radius: 10px;
-	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
+	background: var(--wpasb-accent);
+	border: 0;
+	border-radius: var(--wpasb-radius);
+	box-shadow: 0 1px 2px rgba(22, 24, 29, 0.16), 0 8px 20px -8px rgba(22, 24, 29, 0.45);
 	cursor: pointer;
 	height: auto;
-	transition: background-color .15s ease, transform .05s ease;
+	transition: background-color .16s ease, box-shadow .16s ease, transform .08s ease;
 }
 
 .wpasb-custom-login form .button-primary:hover,
 .wpasb-custom-login #wp-submit:hover {
-	background: #4338ca;
-	border-color: #3730a3;
+	background: var(--wpasb-accent-hover);
+	box-shadow: 0 1px 2px rgba(22, 24, 29, 0.2), 0 12px 26px -10px rgba(22, 24, 29, 0.55);
 }
 
 .wpasb-custom-login form .button-primary:focus,
 .wpasb-custom-login #wp-submit:focus {
-	box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.35);
+	box-shadow: 0 0 0 3px rgba(22, 24, 29, 0.28);
 	outline: 2px solid transparent;
 }
 
 .wpasb-custom-login form .button-primary:active,
 .wpasb-custom-login #wp-submit:active {
 	transform: translateY(1px);
+	box-shadow: 0 1px 2px rgba(22, 24, 29, 0.2);
 }
 
 /* --------------------------------------------------- notices and footer */
 
 .wpasb-custom-login #login_error,
 .wpasb-custom-login .message,
-.wpasb-custom-login .success {
-	width: 100%;
+.wpasb-custom-login .success,
+.wpasb-custom-login .notice {
 	box-sizing: border-box;
-	margin: 0 0 20px;
+	width: 100%;
+	margin: 0 0 22px;
 	padding: 12px 14px;
 	font-size: 13px;
 	line-height: 1.5;
-	border-radius: 10px;
-	border-left-width: 4px;
-	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+	background: #f7f8f9;
+	border: 1px solid var(--wpasb-line);
+	border-left: 1px solid var(--wpasb-line);
+	border-radius: var(--wpasb-radius);
+	box-shadow: none;
+	color: var(--wpasb-ink-2);
 }
 
 .wpasb-custom-login #login_error {
-	border-left-color: #dc2626;
-	background: #fef2f2;
-	color: #991b1b;
+	background: #fdf3f3;
+	border-color: #f2d4d4;
+	color: #8f2525;
+}
+
+.wpasb-custom-login #login_error a,
+.wpasb-custom-login .message a {
+	color: inherit;
 }
 
 .wpasb-custom-login .message,
 .wpasb-custom-login .success {
-	border-left-color: #4f46e5;
-	background: #eef2ff;
-	color: #3730a3;
+	background: #f7f8f9;
+	border-color: var(--wpasb-line);
+	color: var(--wpasb-ink-2);
 }
 
+/* Secondary navigation. Quiet, but reachable and clearly interactive. */
 .wpasb-custom-login #nav,
 .wpasb-custom-login #backtoblog {
-	margin: 18px 0 0;
+	margin: 0;
 	padding: 0;
 	text-align: left;
 	font-size: 13px;
+	line-height: 1.5;
 }
 
 .wpasb-custom-login #nav {
-	margin-top: 22px;
+	margin-top: 24px;
+	padding-top: 20px;
+	border-top: 1px solid var(--wpasb-line);
+}
+
+.wpasb-custom-login #backtoblog {
+	margin-top: 10px;
 }
 
 .wpasb-custom-login #nav a,
 .wpasb-custom-login #backtoblog a {
-	color: #6b7280;
+	color: var(--wpasb-ink-3);
 	text-decoration: none;
+	text-underline-offset: 3px;
+	transition: color .16s ease;
 }
 
 .wpasb-custom-login #nav a:hover,
 .wpasb-custom-login #backtoblog a:hover {
-	color: #4f46e5;
+	color: var(--wpasb-ink);
 	text-decoration: underline;
 }
 
-.wpasb-custom-login .language-switcher {
-	margin-top: 8px;
+.wpasb-custom-login #nav a:focus,
+.wpasb-custom-login #backtoblog a:focus {
+	color: var(--wpasb-ink);
+	border-radius: 4px;
+	box-shadow: 0 0 0 3px var(--wpasb-ring);
+	outline: 2px solid transparent;
+}
+
+/* Core's privacy policy link block, when a policy page is set. */
+.wpasb-custom-login .privacy-policy-page-link {
+	margin: 14px 0 0;
+	text-align: left;
+}
+
+/* Password strength meter on the reset screen. */
+.wpasb-custom-login #pass-strength-result {
+	box-sizing: border-box;
+	width: 100%;
+	margin: -8px 0 18px;
+	padding: 9px 12px;
+	font-size: 12px;
+	font-weight: 500;
+	border-radius: 8px;
+	border: 1px solid var(--wpasb-line);
+	background: #f7f8f9;
+	color: var(--wpasb-ink-2);
+}
+
+.wpasb-custom-login .indicator-hint {
+	margin: 0 0 16px;
+	padding: 0;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--wpasb-ink-3);
+}
+
+/* ------------------------------------------------------------- credit */
+
+/* Plugin credit over the splash. Sits in the bottom-right corner, quiet enough
+   to ignore but legible on any photograph thanks to the text shadow. */
+.wpasb-custom-login .wpasb-credit {
+	position: fixed;
+	right: 20px;
+	bottom: 16px;
+	z-index: 3;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.4;
+	letter-spacing: 0.01em;
+	color: rgba(255, 255, 255, 0.72);
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* ------------------------------------------------- reduced motion + print */
+@media (prefers-reduced-motion: reduce) {
+	.wpasb-custom-login * {
+		transition-duration: .01ms !important;
+		animation-duration: .01ms !important;
+	}
 }
 
 /* --------------------------------------------------------------- mobile */
 
-@media screen and (max-width: 782px) {
+/* Below this width a 35/65 split starves the form, so the splash becomes a
+   banner and the column takes the full width. */
+@media screen and (max-width: 860px) {
 	.wpasb-custom-login::before {
 		position: absolute;
 		width: 100%;
-		height: 220px;
+		height: 200px;
 	}
 
 	.wpasb-custom-login::after {
 		position: absolute;
 		width: 100%;
-		height: 220px;
-		background: linear-gradient(180deg, rgba(15, 23, 42, 0.25) 0%, rgba(15, 23, 42, 0) 100%);
+		height: 200px;
+		background: linear-gradient(180deg, rgba(15, 17, 21, 0.28) 0%, rgba(15, 17, 21, 0) 70%);
 	}
 
 	.wpasb-custom-login #login {
 		width: 100%;
-		max-width: 100%;
+		min-width: 0;
 		min-height: auto;
-		margin: 220px 0 0;
-		padding: 32px 24px 48px;
+		margin: 200px 0 0;
+		padding: 36px 24px 56px;
+		align-items: stretch;
+		border-radius: var(--wpasb-radius-lg) var(--wpasb-radius-lg) 0 0;
+	}
+
+	.wpasb-custom-login #login > * {
+		max-width: 100%;
+	}
+
+	.wpasb-custom-login .wpasb-brand {
+		margin-bottom: 28px;
+	}
+
+	.wpasb-custom-login .wpasb-head-title {
+		font-size: 26px;
+	}
+
+	/* The splash is only a banner here, so a fixed white credit would sit on
+	   white. Move it into the flow under the form and re-ink it. */
+	.wpasb-custom-login .wpasb-credit {
+		position: static;
+		margin: 28px 0 0;
+		text-align: left;
+		color: var(--wpasb-ink-3);
+		text-shadow: none;
+	}
+}
+
+@media screen and (max-width: 400px) {
+	.wpasb-custom-login #login {
+		padding: 32px 20px 48px;
 	}
 }

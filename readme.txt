@@ -135,6 +135,9 @@ OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, whic
 * Added: Custom Login Page module. Off by default. Restyles wp-login.php into a split-screen layout with the login form and your site logo on the left and a splash image on the right, with Laravel-style form fields.
 * Added: Splash image is chosen from the Media Library on the settings page. A bundled image is used until you pick one. The site logo is taken automatically from the theme custom logo or site icon.
 * Added: Media picker script and splash preview on the settings page.
+* Added: Login screen shows a heading naming the current task ("Welcome back", "Reset your password", "Choose a new password"), plus a small plugin credit in the bottom-right corner, filterable via `wpasb_login_credit`.
+* Changed: The WordPress logo is replaced by a brand lockup, a framed site logo with rounded corners and a soft shadow next to the site title and tagline, so a plain square logo still reads as deliberate.
+* Changed: Split is 35/65, form column to splash image, meeting the splash with no gap. The centred language switcher under the form is hidden.
 * Changed: Uninstall now also removes the `wpasb_login_splash_id` option.
 
 = 1.4.0 =
