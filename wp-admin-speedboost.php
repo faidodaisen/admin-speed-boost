@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       WP Admin Speedboost
  * Plugin URI:        https://fidodesign.dev/
- * Description:       Modular WordPress admin performance booster. 16 toggle-able modules: heartbeat throttle, dashboard widget cleanup, disable comments, REST lockdown, emoji/oEmbed disable, jQuery Migrate kill, classic editor, XML-RPC disable, hide login URL, duplicate page & post, and more. Plus one-click DB cleanup.
- * Version:           1.4.0
+ * Description:       Modular WordPress admin performance booster. 17 toggle-able modules: heartbeat throttle, dashboard widget cleanup, disable comments, REST lockdown, emoji/oEmbed disable, jQuery Migrate kill, classic editor, XML-RPC disable, hide login URL, custom login page, duplicate page & post, and more. Plus one-click DB cleanup.
+ * Version:           1.5.0
  * Requires at least: 5.6
  * Tested up to:      7.1
  * Requires PHP:      7.4
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WPASB_VERSION', '1.4.0' );
+define( 'WPASB_VERSION', '1.5.0' );
 define( 'WPASB_FILE', __FILE__ );
 define( 'WPASB_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPASB_URL', plugin_dir_url( __FILE__ ) );
@@ -30,6 +30,7 @@ define( 'WPASB_OPTION', 'wpasb_modules' );
 
 require_once WPASB_DIR . 'includes/module-labels.php';
 require_once WPASB_DIR . 'includes/class-hide-login.php';
+require_once WPASB_DIR . 'includes/class-custom-login.php';
 require_once WPASB_DIR . 'includes/class-duplicate-post.php';
 require_once WPASB_DIR . 'includes/class-module-loader.php';
 require_once WPASB_DIR . 'includes/class-settings-page.php';

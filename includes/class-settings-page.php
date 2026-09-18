@@ -62,6 +62,40 @@ class WPASB_Settings_Page {
 				'show_in_rest'      => false,
 			]
 		);
+
+		register_setting(
+			'wpasb_settings',
+			WPASB_Custom_Login::OPT_SPLASH,
+			[
+				'type'              => 'integer',
+				'sanitize_callback' => [ $this, 'sanitize_splash_id' ],
+				'default'           => 0,
+				'show_in_rest'      => false,
+			]
+		);
+	}
+
+	/**
+	 * The splash image is stored as a Media Library attachment ID. Reject
+	 * anything that is not a real image attachment and fall back to 0 (bundled
+	 * default).
+	 */
+	public function sanitize_splash_id( $input ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return (int) get_option( WPASB_Custom_Login::OPT_SPLASH, 0 );
+		}
+
+		$id = (int) $input;
+
+		if ( $id <= 0 ) {
+			return 0;
+		}
+
+		if ( 'attachment' !== get_post_type( $id ) || false === strpos( (string) get_post_mime_type( $id ), 'image/' ) ) {
+			return 0;
+		}
+
+		return $id;
 	}
 
 	/**
@@ -172,6 +206,25 @@ class WPASB_Settings_Page {
 			[],
 			WPASB_VERSION
 		);
+
+		// Media picker for the Custom Login splash image.
+		wp_enqueue_media();
+		wp_enqueue_script(
+			'wpasb-admin',
+			WPASB_URL . 'assets/admin.js',
+			[ 'jquery' ],
+			WPASB_VERSION,
+			true
+		);
+		wp_localize_script(
+			'wpasb-admin',
+			'wpasbLogin',
+			[
+				'frameTitle'  => __( 'Select login splash image', 'wp-admin-speedboost' ),
+				'frameButton' => __( 'Use this image', 'wp-admin-speedboost' ),
+				'defaultUrl'  => esc_url_raw( WPASB_Custom_Login::default_splash_url() ),
+			]
+		);
 	}
 
 	public function render() {
@@ -226,6 +279,8 @@ class WPASB_Settings_Page {
 				</div>
 
 				<?php $this->render_login_fields( $enabled ); ?>
+
+				<?php $this->render_custom_login_fields( $enabled ); ?>
 
 				<div class="wpasb-actions">
 					<button type="submit" class="wpasb-btn-primary"><?php esc_html_e( 'SAVE CHANGES', 'wp-admin-speedboost' ); ?></button>
@@ -334,6 +389,70 @@ class WPASB_Settings_Page {
 				>
 			</p>
 			<p class="wpasb-card-desc"><?php esc_html_e( 'Where logged-out visitors land when they hit wp-login.php or wp-admin. Leave as 404 unless you have a real page for it.', 'wp-admin-speedboost' ); ?></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Splash image picker for the Custom Login Page module. Rendered inside the
+	 * module form so one Save covers it too.
+	 */
+	private function render_custom_login_fields( array $enabled ) {
+		$splash_id = (int) get_option( WPASB_Custom_Login::OPT_SPLASH, 0 );
+		$active    = ! empty( $enabled['custom-login'] );
+
+		$preview_url = '';
+		if ( $splash_id > 0 ) {
+			$preview_url = wp_get_attachment_image_url( $splash_id, 'medium' );
+		}
+		$is_default = ! $preview_url;
+		if ( $is_default ) {
+			$preview_url = WPASB_Custom_Login::default_splash_url();
+		}
+		?>
+		<div class="wpasb-card wpasb-login-card">
+			<h3 class="wpasb-card-title"><?php esc_html_e( 'Login Splash Image', 'wp-admin-speedboost' ); ?></h3>
+			<p class="wpasb-card-desc">
+				<?php if ( $active ) : ?>
+					<?php esc_html_e( 'Active. This image fills the right side of your login page. Pick any image from the Media Library, or leave it on the bundled default.', 'wp-admin-speedboost' ); ?>
+				<?php else : ?>
+					<?php esc_html_e( 'This takes effect once the Custom Login Page module above is switched on.', 'wp-admin-speedboost' ); ?>
+				<?php endif; ?>
+			</p>
+
+			<div class="wpasb-splash-picker">
+				<div class="wpasb-splash-preview">
+					<img
+						id="wpasb-splash-preview-img"
+						src="<?php echo esc_url( $preview_url ); ?>"
+						alt="<?php esc_attr_e( 'Login splash preview', 'wp-admin-speedboost' ); ?>"
+					>
+					<span
+						id="wpasb-splash-default-note"
+						class="wpasb-splash-note"
+						<?php echo $is_default ? '' : 'style="display:none;"'; ?>
+					><?php esc_html_e( 'Bundled default image', 'wp-admin-speedboost' ); ?></span>
+				</div>
+
+				<input
+					type="hidden"
+					id="wpasb-splash-id"
+					name="<?php echo esc_attr( WPASB_Custom_Login::OPT_SPLASH ); ?>"
+					value="<?php echo esc_attr( $splash_id ); ?>"
+				>
+
+				<div class="wpasb-splash-buttons">
+					<button type="button" class="button" id="wpasb-splash-choose"><?php esc_html_e( 'Choose image', 'wp-admin-speedboost' ); ?></button>
+					<button
+						type="button"
+						class="button-link wpasb-splash-reset"
+						id="wpasb-splash-reset"
+						<?php echo $splash_id > 0 ? '' : 'style="display:none;"'; ?>
+					><?php esc_html_e( 'Reset to default', 'wp-admin-speedboost' ); ?></button>
+				</div>
+			</div>
+
+			<p class="wpasb-card-desc"><?php esc_html_e( 'The site logo shown next to the form is taken automatically from your theme logo or site icon. Set it under Appearance > Customize.', 'wp-admin-speedboost' ); ?></p>
 		</div>
 		<?php
 	}

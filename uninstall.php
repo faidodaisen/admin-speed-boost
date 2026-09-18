@@ -18,6 +18,7 @@ function wpasb_uninstall_cleanup() {
 	delete_option( 'wpasb_modules' );
 	delete_option( 'wpasb_login_slug' );
 	delete_option( 'wpasb_login_redirect' );
+	delete_option( 'wpasb_login_splash_id' );
 
 	$user_transients = $wpdb->get_col(
 		"SELECT option_name FROM {$wpdb->options}

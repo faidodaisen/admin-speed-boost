@@ -4,15 +4,15 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Modular wp-admin performance booster. 16 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
+Modular wp-admin performance booster. 17 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
 
 == Description ==
 
-WP Admin Speedboost packages 16 individually toggle-able admin optimisations into a single settings page.
+WP Admin Speedboost packages 17 individually toggle-able admin optimisations into a single settings page.
 
 Every module is off-switchable, nothing is hidden, and no external service is contacted.
 
@@ -130,6 +130,12 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.5.0 =
+* Added: Custom Login Page module. Off by default. Restyles wp-login.php into a split-screen layout with the login form and your site logo on the left and a splash image on the right, with Laravel-style form fields.
+* Added: Splash image is chosen from the Media Library on the settings page. A bundled image is used until you pick one. The site logo is taken automatically from the theme custom logo or site icon.
+* Added: Media picker script and splash preview on the settings page.
+* Changed: Uninstall now also removes the `wpasb_login_splash_id` option.
 
 = 1.4.0 =
 * Added: Duplicate Page & Post module. On by default. Adds a Duplicate row action to every post, page and custom post type list, plus a "Copy to a new draft" button in the editor.
