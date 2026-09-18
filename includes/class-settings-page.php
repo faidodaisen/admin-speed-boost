@@ -405,6 +405,14 @@ class WPASB_Settings_Page {
 		if ( $splash_id > 0 ) {
 			$preview_url = wp_get_attachment_image_url( $splash_id, 'medium' );
 		}
+
+		// The stored attachment may have been deleted from the Media Library.
+		// Drop back to 0 so the hidden field and preview both reflect reality
+		// and a Save does not re-persist a dead ID.
+		if ( $splash_id > 0 && ! $preview_url ) {
+			$splash_id = 0;
+		}
+
 		$is_default = ! $preview_url;
 		if ( $is_default ) {
 			$preview_url = WPASB_Custom_Login::default_splash_url();

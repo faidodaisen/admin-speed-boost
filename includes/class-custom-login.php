@@ -99,13 +99,13 @@ class WPASB_Custom_Login {
 			WPASB_VERSION
 		);
 
-		$splash = esc_url_raw( $this->splash_url() );
+		$splash = $this->css_url( $this->splash_url() );
 		$logo   = $this->logo_url();
 
 		$css  = ".wpasb-custom-login::before{background-image:url('" . $splash . "');}";
 
 		if ( $logo ) {
-			$logo = esc_url_raw( $logo );
+			$logo = $this->css_url( $logo );
 			$css .= ".wpasb-custom-login h1 a{background-image:url('" . $logo . "');background-size:contain;background-position:left center;width:100%;max-width:220px;height:72px;}";
 		} else {
 			// No logo image: show the site name as styled text instead of an empty box.
@@ -113,6 +113,30 @@ class WPASB_Custom_Login {
 		}
 
 		wp_add_inline_style( 'wpasb-login', $css );
+	}
+
+	/**
+	 * Make a URL safe to drop inside a single-quoted CSS url('...') value.
+	 *
+	 * esc_url_raw sanitises the URL for storage/HTTP but does not encode the
+	 * quote, paren, or backslash characters that could otherwise break out of
+	 * the CSS string context. The sources here are admin-controlled (a Media
+	 * Library attachment or the theme logo), so this is defense-in-depth rather
+	 * than a fix for a known injection, but it costs nothing.
+	 */
+	private function css_url( $url ) {
+		$url = esc_url_raw( (string) $url );
+
+		return strtr(
+			$url,
+			[
+				'\\' => '%5C',
+				"'"  => '%27',
+				'"'  => '%22',
+				'('  => '%28',
+				')'  => '%29',
+			]
+		);
 	}
 }
 
