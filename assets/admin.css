@@ -469,3 +469,58 @@
 .wpasb-splash-reset:hover {
 	color: #000000;
 }
+
+/* ============================================================
+   UPDATE STATUS — sits between hero and the module form
+   ============================================================ */
+.wpasb-update-status {
+	max-width: 1136px;
+	margin: -24px auto 40px;
+	padding: 20px 24px;
+	border: 1px solid #e0e0e0;
+	border-left: 4px solid #000000;
+	background: #ffffff;
+}
+
+.wpasb-update-status p {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	line-height: 1.5;
+	color: #4b4b4b;
+}
+
+.wpasb-update-status p:last-child {
+	margin-bottom: 0;
+}
+
+.wpasb-update-status strong {
+	color: #000000;
+}
+
+/* Colour carries the state; the left rule is the only thing that changes,
+   so the panel stays quiet when there is nothing to act on. */
+.wpasb-update-status--available {
+	border-left-color: #1d6f42;
+	background: #f4fbf6;
+}
+
+.wpasb-update-status--error {
+	border-left-color: #b32d2e;
+	background: #fdf6f6;
+}
+
+.wpasb-update-status .button-link {
+	margin-left: 8px;
+	color: #4b4b4b;
+	text-decoration: underline;
+}
+
+.wpasb-update-status .button-link:hover {
+	color: #000000;
+}
+
+@media screen and (max-width: 782px) {
+	.wpasb-update-status {
+		margin: -8px 0 32px;
+	}
+}

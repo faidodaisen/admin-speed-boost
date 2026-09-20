@@ -250,6 +250,8 @@ class WPASB_Settings_Page {
 			// every notice.
 			?>
 
+			<?php WPASB_Updater::render_status_panel(); ?>
+
 			<form method="post" action="options.php" class="wpasb-form">
 				<?php settings_fields( 'wpasb_settings' ); ?>
 

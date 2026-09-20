@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,13 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.6.0 =
+* Added: Automatic updates from GitHub releases. The plugin is not on wordpress.org, so WordPress had no update source for it and the Plugins screen never reported new versions. It now asks the GitHub Releases API for the newest tagged release, and an available update appears on the Plugins and Updates screens exactly like any hosted plugin, one-click install included.
+* Added: "Check for updates" link in the plugin's row on the Plugins screen, which clears the cache and re-checks immediately instead of waiting for the twice-daily cron.
+* Added: Update status panel on the settings page showing the installed version, the newest release, and the reason if a check failed.
+* Added: Support for private repositories via an optional GitHub token, filterable with `wpasb_github_token`. The token is only ever sent to this plugin's own repository.
+* Changed: Release checks are cached for six hours, so the Plugins screen does not hit the GitHub API on every load.
 
 = 1.5.0 =
 * Added: Custom Login Page module. Off by default. Restyles wp-login.php into a split-screen layout with the login form and your site logo on the left and a splash image on the right, with Laravel-style form fields.

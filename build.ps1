@@ -23,9 +23,9 @@ foreach ($d in @('includes','modules','assets')) {
 
 # Belt and braces: nothing dev-related should have slipped in.
 $junk = Get-ChildItem $target -Recurse -Force |
-  Where-Object { $_.Name -match '^(\.git|node_modules|dist)$' -or
-                 $_.Name -match '^_' -or
-                 $_.Extension -in @('.bat','.ps1','.log','.zip') }
+  Where-Object { $_.Name -match '^(\.git|node_modules|dist|tests)$' -or
+                 $_.Name -match '^\.' -or
+                 $_.Extension -in @('.md','.bat','.ps1','.log','.zip') }
 if ($junk) { $junk | Remove-Item -Recurse -Force }
 
 if (-not (Test-Path $dist)) { New-Item -ItemType Directory -Path $dist | Out-Null }

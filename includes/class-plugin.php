@@ -31,6 +31,10 @@ class WPASB_Plugin {
 		$this->loader = new WPASB_Module_Loader();
 		$this->loader->load();
 
+		// Not inside is_admin(): WP also refreshes the update transient from
+		// wp-cron, which runs on front-end requests with no admin context.
+		WPASB_Updater::instance()->init();
+
 		if ( is_admin() ) {
 			new WPASB_Settings_Page( $this->loader );
 			new WPASB_DB_Cleanup();
