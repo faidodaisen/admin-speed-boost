@@ -1,0 +1,87 @@
+name: Release
+
+# Fires on every push to the default branch, but only actually releases when
+# the Version header in the plugin file has changed to something that has no
+# tag yet. That keeps "push = release" true without publishing a release for
+# every README typo, and makes the plugin header the single source of truth
+# for the version (same rule build.ps1 uses locally).
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from plugin header
+        id: ver
+        run: |
+          VER=$(grep -m1 -oP '^\s*\*\s*Version:\s*\K.+' wp-admin-speedboost.php | tr -d '[:space:]')
+          if [ -z "$VER" ]; then
+            echo "Could not read Version from plugin header" >&2
+            exit 1
+          fi
+          # WPASB_VERSION and the header must agree, or the update check compares
+          # against a number the shipped code does not actually report.
+          CONST=$(grep -m1 -oP "define\(\s*'WPASB_VERSION',\s*'\K[^']+" wp-admin-speedboost.php)
+          if [ "$VER" != "$CONST" ]; then
+            echo "Header version ($VER) != WPASB_VERSION ($CONST)" >&2
+            exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if this version is already released
+        id: check
+        run: |
+          if git rev-parse "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag v${{ steps.ver.outputs.version }} already exists — nothing to release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build plugin zip
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          set -eu
+          SLUG=wp-admin-speedboost
+          VER="${{ steps.ver.outputs.version }}"
+          STAGE="$RUNNER_TEMP/stage"
+          # Same include list as build.ps1: ship only runtime files, so the zip
+          # never carries dev tooling or the dist/ folder into a live site.
+          mkdir -p "$STAGE/$SLUG"
+          cp wp-admin-speedboost.php uninstall.php readme.txt "$STAGE/$SLUG/"
+          for d in includes modules assets; do
+            [ -d "$d" ] && cp -r "$d" "$STAGE/$SLUG/"
+          done
+          [ -d languages ] && cp -r languages "$STAGE/$SLUG/"
+          # Belt and braces, in case something dev-related is tracked.
+          find "$STAGE/$SLUG" \( -name '.*' -o -name '*.md' -o -name '*.ps1' \
+            -o -name '*.bat' -o -name '*.log' -o -name 'tests' \) \
+            -prune -exec rm -rf {} +
+          ( cd "$STAGE" && zip -rq "$GITHUB_WORKSPACE/$SLUG-$VER.zip" "$SLUG" -x '*.DS_Store' )
+          unzip -l "$GITHUB_WORKSPACE/$SLUG-$VER.zip" | tail -3
+
+      - name: Tag and publish release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          VER="${{ steps.ver.outputs.version }}"
+          git tag "v$VER"
+          git push origin "v$VER"
+          # Notes are generated from the commits since the previous tag, so the
+          # "View details" changelog in wp-admin is never empty.
+          gh release create "v$VER" \
+            "wp-admin-speedboost-$VER.zip" \
+            --title "v$VER" \
+            --generate-notes
