@@ -128,7 +128,8 @@ $active  = count( array_filter( $enabled ) );
 // Structure required by admin.css / admin.js.
 foreach ( [
 	'wpasb-page', 'wpasb-shell', 'wpasb-header', 'wpasb-update-strip',
-	'wpasb-module-toolbar', 'wpasb-module-group', 'wpasb-module-card',
+	'wpasb-module-toolbar', 'wpasb-module-list', 'wpasb-module-row',
+	'wpasb-list-group', 'wpasb-toggle-all',
 	'wpasb-savebar', 'wpasb-cleanup', 'wpasb-server',
 ] as $cls ) {
 	expect( false !== strpos( $html, 'class="' . $cls ) || false !== strpos( $html, $cls . '"' ) || false !== strpos( $html, $cls . ' ' ), "missing section class .$cls", $failures );
@@ -148,10 +149,10 @@ foreach ( [
 	expect( false !== strpos( $html, 'id="' . $id . '"' ), "missing #$id", $failures );
 }
 
-// Every module must render exactly one card and one checkbox.
+// Every module must render exactly one row and one checkbox.
 expect(
-	substr_count( $html, 'class="wpasb-module-card' ) === $total,
-	'module card count != ' . $total,
+	substr_count( $html, 'class="wpasb-module-row' ) === $total,
+	'module row count != ' . $total,
 	$failures
 );
 expect(
@@ -203,13 +204,25 @@ echo 'Rendered ' . strlen( $html ) . " bytes, $total modules, $active enabled.\n
 // Optional: write a standalone preview page for visual inspection.
 if ( in_array( '--dump', $argv, true ) ) {
 	$css  = file_get_contents( __DIR__ . '/../assets/admin.css' );
+	$js   = file_get_contents( __DIR__ . '/../assets/admin.js' );
+	// The real page gets wpasbData from wp_localize_script; the preview needs
+	// the same shape or the script aborts before binding anything.
+	$boot = 'var wpasbData=' . json_encode(
+		[
+			'ajaxUrl'       => 'about:blank',
+			'cleanupNonce'  => 'preview',
+			'cleanupAction' => 'wpasb_cleanup',
+			'i18n'          => [],
+		]
+	) . ';var wpasbLogin={frameTitle:"",frameButton:"",defaultUrl:""};';
 	$out  = "<!doctype html><html><head><meta charset=\"utf-8\">"
 		. "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
 		. "<title>Admin Speedboost preview</title>"
 		. "<style>body{margin:0;padding:0 0 0 20px;background:#F5F5F5;"
 		. "font-family:-apple-system,'Segoe UI',Roboto,sans-serif}"
 		. ".screen-reader-text{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(1px,1px,1px,1px)}</style>"
-		. "<style>{$css}</style></head><body>{$html}</body></html>";
+		. "<style>{$css}</style></head><body>{$html}"
+		. "<script>{$boot}</script><script>{$js}</script></body></html>";
 	$path = __DIR__ . '/preview.html';
 	file_put_contents( $path, $out );
 	echo "Preview written: $path\n";

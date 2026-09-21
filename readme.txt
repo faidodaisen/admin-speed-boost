@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,15 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.7.1 =
+* Changed: The module list is now a single compact list — one row per module, name and short description on the same line. The separate cards and their headed group boxes are gone, which removes most of the page's scroll length.
+* Added: An "Enable all" / "Disable all" button beside the module search. It always acts on all 17 modules, not just the rows search is showing.
+* Changed: Module descriptions shortened to one line each. The longer explanations were dropped rather than hidden behind a disclosure.
+* Fixed: The "Database cleanup" heading rendered dark-on-dark, because the page-level heading colour outranked the panel's own rule.
+* Fixed: Panels toggled by JavaScript could stay visible: a layout `display` on the class beat the browser's own `[hidden]` rule, so the cleanup spinner leaked on load.
+* Fixed: The search icon overlapped the placeholder text. The icon is now a flex child instead of an overlay, so WordPress's own input padding cannot slide the text under it.
+* Fixed: Horizontal scrolling at phone widths, caused by the server recommendation grid demanding a 380px track on a 360px screen.
 
 = 1.7.0 =
 * Changed: Redesigned the settings screen as a monochrome control panel. The oversized promotional header and the repeated per-module cards are gone; the page now opens with a compact identity header that reports how many of the 17 modules are enabled, followed by the version and update strip, the modules, database cleanup and server recommendations.

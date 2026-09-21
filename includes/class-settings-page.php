@@ -352,27 +352,36 @@ class WPASB_Settings_Page {
 		$enabled = $this->loader->get_settings();
 		$groups  = $this->module_groups();
 
-		$total      = count( $modules );
-		$active     = 0;
-		$grouped    = [];
-		$claimed    = [];
+		$total  = count( $modules );
+		$active = 0;
 		foreach ( $modules as $slug => $module ) {
 			if ( ! empty( $enabled[ $slug ] ) ) {
 				$active++;
 			}
 		}
+
+		// One flat list, ordered by group so related modules still sit
+		// together, but without the group boxes that made the page long.
+		$ordered = [];
+		$claimed = [];
 		foreach ( $groups as $key => $group ) {
 			foreach ( $group['slugs'] as $slug ) {
 				if ( isset( $modules[ $slug ] ) ) {
-					$grouped[ $key ][ $slug ] = $modules[ $slug ];
-					$claimed[ $slug ]         = true;
+					$ordered[ $slug ] = [
+						'module' => $modules[ $slug ],
+						'group'  => $group['title'],
+					];
+					$claimed[ $slug ] = true;
 				}
 			}
 		}
 		// Any module added later without a group still has to appear somewhere.
 		foreach ( $modules as $slug => $module ) {
 			if ( empty( $claimed[ $slug ] ) ) {
-				$grouped['performance'][ $slug ] = $module;
+				$ordered[ $slug ] = [
+					'module' => $module,
+					'group'  => $groups['performance']['title'],
+				];
 			}
 		}
 		?>
@@ -408,21 +417,32 @@ class WPASB_Settings_Page {
 					<div class="wpasb-module-toolbar">
 						<div class="wpasb-module-toolbar-text">
 							<h2 class="wpasb-section-title"><?php esc_html_e( 'Modules', 'wp-admin-speedboost' ); ?></h2>
-							<p class="wpasb-section-desc"><?php esc_html_e( 'Every switch below takes effect only after you save.', 'wp-admin-speedboost' ); ?></p>
+							<p class="wpasb-section-desc"><?php esc_html_e( 'Switches take effect only after you save.', 'wp-admin-speedboost' ); ?></p>
 						</div>
-						<div class="wpasb-module-search">
-							<label class="wpasb-search-label" for="wpasb-search"><?php esc_html_e( 'Find a module', 'wp-admin-speedboost' ); ?></label>
+						<div class="wpasb-module-tools">
 							<div class="wpasb-search-control">
+								<label class="screen-reader-text" for="wpasb-search"><?php esc_html_e( 'Find a module', 'wp-admin-speedboost' ); ?></label>
 								<?php echo $this->icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 								<input type="search" id="wpasb-search" class="wpasb-search-input" autocomplete="off"
-									placeholder="<?php esc_attr_e( 'Search modules…', 'wp-admin-speedboost' ); ?>">
+									placeholder="<?php esc_attr_e( 'Find a module…', 'wp-admin-speedboost' ); ?>">
 								<button type="button" class="wpasb-search-clear" id="wpasb-search-clear" hidden>
 									<span class="screen-reader-text"><?php esc_html_e( 'Clear search', 'wp-admin-speedboost' ); ?></span>
 									<?php echo $this->icon( 'clear' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 								</button>
 							</div>
-							<p class="wpasb-search-status screen-reader-text" id="wpasb-search-status" role="status" aria-live="polite"></p>
+							<?php
+							// One button, not two: it enables everything unless
+							// everything is already on, so the action always has
+							// a visible effect and states what it will do.
+							$all_on = ( $active === $total );
+							?>
+							<button type="button" class="wpasb-btn wpasb-btn--quiet" id="wpasb-toggle-all"
+								data-enable-label="<?php esc_attr_e( 'Enable all', 'wp-admin-speedboost' ); ?>"
+								data-disable-label="<?php esc_attr_e( 'Disable all', 'wp-admin-speedboost' ); ?>">
+								<?php echo $all_on ? esc_html__( 'Disable all', 'wp-admin-speedboost' ) : esc_html__( 'Enable all', 'wp-admin-speedboost' ); ?>
+							</button>
 						</div>
+						<p class="wpasb-search-status screen-reader-text" id="wpasb-search-status" role="status" aria-live="polite"></p>
 					</div>
 
 					<p class="wpasb-search-empty" id="wpasb-search-empty" hidden>
@@ -430,95 +450,66 @@ class WPASB_Settings_Page {
 						<button type="button" class="wpasb-link-button" data-wpasb-clear-search><?php esc_html_e( 'Clear search', 'wp-admin-speedboost' ); ?></button>
 					</p>
 
-					<?php foreach ( $groups as $key => $group ) : ?>
+					<div class="wpasb-module-list">
 						<?php
-						if ( empty( $grouped[ $key ] ) ) {
-							continue;
-						}
-						$group_total  = count( $grouped[ $key ] );
-						$group_active = 0;
-						foreach ( $grouped[ $key ] as $slug => $module ) {
-							if ( ! empty( $enabled[ $slug ] ) ) {
-								$group_active++;
-							}
-						}
-						?>
-						<section class="wpasb-module-group" data-group="<?php echo esc_attr( $key ); ?>">
-							<div class="wpasb-group-header">
-								<h3 class="wpasb-group-title"><?php echo esc_html( $group['title'] ); ?></h3>
-								<p class="wpasb-group-count" data-group-total="<?php echo esc_attr( $group_total ); ?>">
-									<?php
-									printf(
-										/* translators: %1$d: selected modules, %2$d: modules in this group */
-										esc_html__( '%1$d of %2$d selected', 'wp-admin-speedboost' ),
-										(int) $group_active,
-										(int) $group_total
-									);
-									?>
+						$last_group = '';
+						foreach ( $ordered as $slug => $entry ) :
+							$module = $entry['module'];
+							$is_on  = ! empty( $enabled[ $slug ] );
+							$wide   = in_array( $slug, [ 'hide-login', 'custom-login' ], true );
+							// Descriptions are trimmed to their lead sentence:
+							// the row is a scannable index, not documentation.
+							list( $lead ) = $this->split_description( $module['description'] );
+							$new_group    = ( $entry['group'] !== $last_group );
+							$last_group   = $entry['group'];
+							?>
+							<?php if ( $new_group ) : ?>
+								<p class="wpasb-list-group" data-group-label="<?php echo esc_attr( $entry['group'] ); ?>">
+									<?php echo esc_html( $entry['group'] ); ?>
 								</p>
-								<p class="wpasb-group-description"><?php echo esc_html( $group['description'] ); ?></p>
+							<?php endif; ?>
+
+							<div class="wpasb-module-row<?php echo $wide ? ' wpasb-module-row--expandable' : ''; ?>"
+								data-slug="<?php echo esc_attr( $slug ); ?>"
+								data-initial="<?php echo $is_on ? '1' : '0'; ?>"
+								data-group-name="<?php echo esc_attr( $entry['group'] ); ?>">
+								<label class="wpasb-toggle" for="wpasb-<?php echo esc_attr( $slug ); ?>">
+									<span class="screen-reader-text">
+										<?php
+										printf(
+											/* translators: %s: module name */
+											esc_html__( 'Enable %s', 'wp-admin-speedboost' ),
+											esc_html( $module['name'] )
+										);
+										?>
+									</span>
+									<input
+										type="checkbox"
+										id="wpasb-<?php echo esc_attr( $slug ); ?>"
+										class="wpasb-module-input"
+										name="<?php echo esc_attr( WPASB_OPTION ); ?>[<?php echo esc_attr( $slug ); ?>]"
+										value="1"
+										<?php echo $wide ? 'aria-controls="wpasb-panel-' . esc_attr( $slug ) . '"' : ''; ?>
+										<?php checked( $is_on ); ?>
+									>
+									<span class="wpasb-toggle-slider" aria-hidden="true"></span>
+								</label>
+
+								<div class="wpasb-row-text">
+									<span class="wpasb-row-name"><?php echo esc_html( $module['name'] ); ?></span>
+									<span class="wpasb-row-desc"><?php echo esc_html( $lead ); ?></span>
+								</div>
+
+								<span class="wpasb-row-state" data-state="<?php echo $is_on ? 'on' : 'off'; ?>"></span>
+
+								<?php if ( 'hide-login' === $slug ) : ?>
+									<?php $this->render_login_fields( $is_on ); ?>
+								<?php elseif ( 'custom-login' === $slug ) : ?>
+									<?php $this->render_custom_login_fields( $is_on ); ?>
+								<?php endif; ?>
 							</div>
-
-							<div class="wpasb-module-grid">
-								<?php foreach ( $grouped[ $key ] as $slug => $module ) : ?>
-									<?php
-									list( $lead, $rest ) = $this->split_description( $module['description'] );
-									$is_on = ! empty( $enabled[ $slug ] );
-									$wide  = in_array( $slug, [ 'hide-login', 'custom-login' ], true );
-									?>
-									<div class="wpasb-module-card<?php echo $wide ? ' wpasb-module-card--wide' : ''; ?>"
-										data-slug="<?php echo esc_attr( $slug ); ?>"
-										data-initial="<?php echo $is_on ? '1' : '0'; ?>"
-										data-group-name="<?php echo esc_attr( $group['title'] ); ?>">
-										<div class="wpasb-module-heading">
-											<h4 class="wpasb-module-title"><?php echo esc_html( $module['name'] ); ?></h4>
-											<label class="wpasb-toggle" for="wpasb-<?php echo esc_attr( $slug ); ?>">
-												<span class="screen-reader-text">
-													<?php
-													printf(
-														/* translators: %s: module name */
-														esc_html__( 'Enable %s', 'wp-admin-speedboost' ),
-														esc_html( $module['name'] )
-													);
-													?>
-												</span>
-												<input
-													type="checkbox"
-													id="wpasb-<?php echo esc_attr( $slug ); ?>"
-													class="wpasb-module-input"
-													name="<?php echo esc_attr( WPASB_OPTION ); ?>[<?php echo esc_attr( $slug ); ?>]"
-													value="1"
-													<?php echo $wide ? 'aria-controls="wpasb-panel-' . esc_attr( $slug ) . '"' : ''; ?>
-													<?php checked( $is_on ); ?>
-												>
-												<span class="wpasb-toggle-slider" aria-hidden="true"></span>
-											</label>
-										</div>
-
-										<p class="wpasb-module-summary-text"><?php echo esc_html( $lead ); ?></p>
-
-										<?php if ( '' !== $rest ) : ?>
-											<details class="wpasb-module-details">
-												<summary><?php esc_html_e( 'Details', 'wp-admin-speedboost' ); ?></summary>
-												<p><?php echo esc_html( $rest ); ?></p>
-											</details>
-										<?php endif; ?>
-
-										<?php if ( 'hide-login' === $slug ) : ?>
-											<?php $this->render_login_fields( $is_on ); ?>
-										<?php elseif ( 'custom-login' === $slug ) : ?>
-											<?php $this->render_custom_login_fields( $is_on ); ?>
-										<?php endif; ?>
-
-										<p class="wpasb-module-state" data-state="<?php echo $is_on ? 'on' : 'off'; ?>">
-											<?php echo $this->icon( $is_on ? 'check' : 'circle' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-											<span class="wpasb-module-state-text"><?php echo $is_on ? esc_html__( 'Enabled', 'wp-admin-speedboost' ) : esc_html__( 'Disabled', 'wp-admin-speedboost' ); ?></span>
-										</p>
-									</div>
-								<?php endforeach; ?>
-							</div>
-						</section>
-					<?php endforeach; ?>
+						<?php endforeach; ?>
+					</div>
 
 					<div class="wpasb-savebar" id="wpasb-savebar">
 						<p class="wpasb-savebar-status"><?php esc_html_e( 'Unsaved changes', 'wp-admin-speedboost' ); ?></p>
@@ -586,10 +577,10 @@ class WPASB_Settings_Page {
 			<div class="wpasb-cleanup-intro">
 				<div class="wpasb-cleanup-text">
 					<h2 class="wpasb-cleanup-title"><?php esc_html_e( 'Database cleanup', 'wp-admin-speedboost' ); ?></h2>
-					<p class="wpasb-cleanup-desc"><?php esc_html_e( 'Delete post revisions and expired transients, remove orphaned metadata, then optimise eligible tables.', 'wp-admin-speedboost' ); ?></p>
+					<p class="wpasb-cleanup-desc"><?php esc_html_e( 'Delete revisions and expired transients, remove orphaned metadata, optimise tables.', 'wp-admin-speedboost' ); ?></p>
 					<p class="wpasb-cleanup-warning">
 						<?php echo $this->icon( 'warn' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
-						<span><?php esc_html_e( 'Cleanup permanently deletes data. Make a current backup before continuing.', 'wp-admin-speedboost' ); ?></span>
+						<span><?php esc_html_e( 'Permanently deletes data. Back up first.', 'wp-admin-speedboost' ); ?></span>
 					</p>
 				</div>
 				<div class="wpasb-cleanup-launch">
@@ -733,7 +724,7 @@ class WPASB_Settings_Page {
 				<span><?php esc_html_e( 'Bookmark your new login URL before you sign out.', 'wp-admin-speedboost' ); ?></span>
 			</p>
 
-			<p class="wpasb-field-help"><?php esc_html_e( 'The redirect path is where logged-out visitors land when they hit wp-login.php or wp-admin. Leave it as 404 unless you have a real page for it.', 'wp-admin-speedboost' ); ?></p>
+			<p class="wpasb-field-help"><?php esc_html_e( 'Redirect path: where logged-out visitors land on wp-login.php or wp-admin.', 'wp-admin-speedboost' ); ?></p>
 		</div>
 
 		<p class="wpasb-module-settings-hint" data-hint-for="hide-login" <?php echo $active ? 'hidden' : ''; ?>>

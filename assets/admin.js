@@ -50,22 +50,20 @@
 		var clearBtn = document.getElementById( 'wpasb-search-clear' );
 		var status   = document.getElementById( 'wpasb-search-status' );
 		var empty    = document.getElementById( 'wpasb-search-empty' );
-		var cards    = Array.prototype.slice.call( document.querySelectorAll( '.wpasb-module-card' ) );
-		var groups   = Array.prototype.slice.call( document.querySelectorAll( '.wpasb-module-group' ) );
+		var rows     = Array.prototype.slice.call( document.querySelectorAll( '.wpasb-module-row' ) );
+		var headings = Array.prototype.slice.call( document.querySelectorAll( '.wpasb-list-group' ) );
 		var timer    = null;
 
-		var index = cards.map( function ( card ) {
-			var title   = card.querySelector( '.wpasb-module-title' );
-			var summary = card.querySelector( '.wpasb-module-summary-text' );
-			var details = card.querySelector( '.wpasb-module-details' );
+		var index = rows.map( function ( row ) {
+			var name = row.querySelector( '.wpasb-row-name' );
+			var desc = row.querySelector( '.wpasb-row-desc' );
 
 			return {
-				card: card,
+				row: row,
 				haystack: [
-					title ? title.textContent : '',
-					summary ? summary.textContent : '',
-					details ? details.textContent : '',
-					card.getAttribute( 'data-group-name' ) || ''
+					name ? name.textContent : '',
+					desc ? desc.textContent : '',
+					row.getAttribute( 'data-group-name' ) || ''
 				].join( ' ' ).toLowerCase()
 			};
 		} );
@@ -75,18 +73,28 @@
 			var shown = 0;
 
 			index.forEach( function ( entry ) {
-				// Cards are only visually hidden. Every input stays in the
+				// Rows are only visually hidden. Every input stays in the
 				// form, so filtering never alters what gets submitted.
 				var match = '' === query || entry.haystack.indexOf( query ) !== -1;
-				entry.card.classList.toggle( 'is-filtered-out', ! match );
+				entry.row.classList.toggle( 'is-filtered-out', ! match );
 				if ( match ) {
 					shown++;
 				}
 			} );
 
-			groups.forEach( function ( group ) {
-				var visible = group.querySelectorAll( '.wpasb-module-card:not(.is-filtered-out)' ).length;
-				group.classList.toggle( 'is-filtered-out', 0 === visible );
+			// A group label belongs to the rows that follow it, so it hides
+			// once every row under it is filtered out.
+			headings.forEach( function ( heading ) {
+				var visible = false;
+				var node    = heading.nextElementSibling;
+				while ( node && ! node.classList.contains( 'wpasb-list-group' ) ) {
+					if ( node.classList.contains( 'wpasb-module-row' ) && ! node.classList.contains( 'is-filtered-out' ) ) {
+						visible = true;
+						break;
+					}
+					node = node.nextElementSibling;
+				}
+				heading.classList.toggle( 'is-filtered-out', ! visible );
 			} );
 
 			if ( clearBtn ) {
@@ -99,7 +107,7 @@
 				status.textContent = sprintf(
 					t( 'searchStatus', 'Showing %1$d of %2$d modules.' ),
 					shown,
-					cards.length
+					rows.length
 				);
 			}
 		}
@@ -140,10 +148,11 @@
 		var savebar     = document.getElementById( 'wpasb-savebar' );
 		var discardBtn  = document.getElementById( 'wpasb-discard' );
 		var saveBtn     = document.getElementById( 'wpasb-save' );
+		var toggleAll   = document.getElementById( 'wpasb-toggle-all' );
 		var summaryEl   = document.getElementById( 'wpasb-summary-count' );
 		var stateEl     = document.getElementById( 'wpasb-summary-state' );
-		var cards       = Array.prototype.slice.call( form.querySelectorAll( '.wpasb-module-card' ) );
-		var total       = summaryEl ? parseInt( summaryEl.getAttribute( 'data-total' ), 10 ) : cards.length;
+		var rows        = Array.prototype.slice.call( form.querySelectorAll( '.wpasb-module-row' ) );
+		var total       = summaryEl ? parseInt( summaryEl.getAttribute( 'data-total' ), 10 ) : rows.length;
 		var submitting  = false;
 		var cleanupBusy = false;
 
@@ -197,34 +206,33 @@
 			}
 		}
 
-		function syncCard( card ) {
-			var input = card.querySelector( '.wpasb-module-input' );
+		function syncRow( row ) {
+			var input = row.querySelector( '.wpasb-module-input' );
 			if ( ! input ) {
 				return;
 			}
 
-			var slug    = card.getAttribute( 'data-slug' );
-			var initial = '1' === card.getAttribute( 'data-initial' );
+			var slug    = row.getAttribute( 'data-slug' );
+			var initial = '1' === row.getAttribute( 'data-initial' );
 			var on      = input.checked;
-			var state   = card.querySelector( '.wpasb-module-state' );
-			var label   = card.querySelector( '.wpasb-module-state-text' );
-			var panel   = card.querySelector( '.wpasb-module-settings' );
-			var hint    = card.querySelector( '.wpasb-module-settings-hint' );
+			var state   = row.querySelector( '.wpasb-row-state' );
+			var panel   = row.querySelector( '.wpasb-module-settings' );
+			var hint    = row.querySelector( '.wpasb-module-settings-hint' );
 
-			card.classList.toggle( 'is-on', on );
-			card.classList.toggle( 'is-off', ! on );
-			card.classList.toggle( 'is-changed', on !== initial );
+			row.classList.toggle( 'is-on', on );
+			row.classList.toggle( 'is-off', ! on );
+			row.classList.toggle( 'is-changed', on !== initial );
 
 			if ( state ) {
 				state.setAttribute( 'data-state', on !== initial ? 'pending' : ( on ? 'on' : 'off' ) );
-			}
-			if ( label ) {
+				// The row has no text status any more, so the state dot
+				// carries the meaning for assistive tech as a tooltip.
 				if ( on !== initial ) {
-					label.textContent = on
+					state.title = on
 						? t( 'willEnable', 'Will enable when saved' )
 						: t( 'willDisable', 'Will disable when saved' );
 				} else {
-					label.textContent = on ? t( 'enabled', 'Enabled' ) : t( 'disabled', 'Disabled' );
+					state.title = on ? t( 'enabled', 'Enabled' ) : t( 'disabled', 'Disabled' );
 				}
 			}
 
@@ -245,6 +253,18 @@
 			}
 		}
 
+		function syncToggleAll() {
+			if ( ! toggleAll ) {
+				return;
+			}
+			var checked = form.querySelectorAll( '.wpasb-module-input:checked' ).length;
+			var allOn   = checked === rows.length && rows.length > 0;
+			toggleAll.textContent = allOn
+				? toggleAll.getAttribute( 'data-disable-label' )
+				: toggleAll.getAttribute( 'data-enable-label' );
+			toggleAll.setAttribute( 'data-mode', allOn ? 'disable' : 'enable' );
+		}
+
 		function updateCounts() {
 			var active = form.querySelectorAll( '.wpasb-module-input:checked' ).length;
 			var dirty  = isDirty();
@@ -259,16 +279,7 @@
 				stateEl.classList.toggle( 'is-unsaved', dirty );
 			}
 
-			Array.prototype.forEach.call( form.querySelectorAll( '.wpasb-module-group' ), function ( group ) {
-				var counter = group.querySelector( '.wpasb-group-count' );
-				if ( ! counter ) {
-					return;
-				}
-				// Counts cover the whole group, including cards search hid.
-				var groupTotal  = parseInt( counter.getAttribute( 'data-group-total' ), 10 );
-				var groupActive = group.querySelectorAll( '.wpasb-module-input:checked' ).length;
-				counter.textContent = sprintf( t( 'selectedCount', '%1$d of %2$d selected' ), groupActive, groupTotal );
-			} );
+			syncToggleAll();
 
 			if ( savebar ) {
 				if ( ! dirty && savebar.contains( document.activeElement ) ) {
@@ -285,8 +296,23 @@
 		}
 
 		function refresh() {
-			cards.forEach( syncCard );
+			rows.forEach( syncRow );
 			updateCounts();
+		}
+
+		if ( toggleAll ) {
+			toggleAll.addEventListener( 'click', function () {
+				// Acts on every module, not just the rows search left visible,
+				// so the label's promise ("Enable all") is always the truth.
+				var enable = 'disable' !== toggleAll.getAttribute( 'data-mode' );
+				rows.forEach( function ( row ) {
+					var input = row.querySelector( '.wpasb-module-input' );
+					if ( input ) {
+						input.checked = enable;
+					}
+				} );
+				refresh();
+			} );
 		}
 
 		form.addEventListener( 'change', function ( event ) {
@@ -297,9 +323,9 @@
 
 		form.addEventListener( 'input', function ( event ) {
 			if ( event.target.matches( '#wpasb-login-slug, #wpasb-login-redirect' ) ) {
-				var card = event.target.closest( '.wpasb-module-card' );
-				if ( card ) {
-					syncCard( card );
+				var row = event.target.closest( '.wpasb-module-row' );
+				if ( row ) {
+					syncRow( row );
 				}
 				updateCounts();
 			}

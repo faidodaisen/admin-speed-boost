@@ -299,58 +299,77 @@
 	justify-content: space-between;
 	flex-wrap: wrap;
 	gap: 16px;
-	padding-top: 40px;
+	padding-top: 32px;
 }
 
-.wpasb-search-label {
-	display: block;
-	margin-bottom: 6px;
-	color: var(--wpasb-ink-3);
-	font-size: 12px;
-	font-weight: 600;
-}
-
-.wpasb-search-control {
-	position: relative;
+.wpasb-module-tools {
 	display: flex;
 	align-items: center;
-	width: 280px;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+/*
+ * The icon is a flex child, not an absolutely positioned overlay: WordPress
+ * ships its own padding for input[type="search"], and any padding it wins
+ * would slide the text back under an overlaid icon.
+ */
+.wpasb-search-control {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 260px;
 	max-width: 100%;
+	min-height: 34px;
+	padding: 0 6px 0 10px;
+	border: 1px solid var(--wpasb-line-strong);
+	border-radius: var(--wpasb-radius);
+	background: var(--wpasb-surface);
+}
+
+.wpasb-search-control:focus-within {
+	border-color: var(--wpasb-ink);
 }
 
 .wpasb-search-control > .wpasb-icon {
-	position: absolute;
-	left: 10px;
+	flex: none;
 	color: var(--wpasb-ink-4);
 	pointer-events: none;
 }
 
-.wpasb-search-input {
-	width: 100%;
-	min-height: 36px;
+.wpasb-page .wpasb-search-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto;
+	min-height: 30px;
 	margin: 0;
-	padding: 0 34px;
-	border: 1px solid var(--wpasb-line-strong);
-	border-radius: var(--wpasb-radius);
-	background: var(--wpasb-surface);
+	padding: 0;
+	border: 0;
+	background: none;
 	color: var(--wpasb-ink);
 	font-size: 13px;
+	line-height: 30px;
 	box-shadow: none;
+	outline: none;
 }
 
-.wpasb-search-input:focus {
-	border-color: var(--wpasb-ink);
+.wpasb-page .wpasb-search-input:focus {
+	border: 0;
 	box-shadow: none;
+	outline: none;
+}
+
+.wpasb-search-input::-webkit-search-cancel-button {
+	display: none;
 }
 
 .wpasb-search-clear {
-	position: absolute;
-	right: 6px;
+	flex: none;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 24px;
-	height: 24px;
+	width: 22px;
+	height: 22px;
 	padding: 0;
 	border: 0;
 	border-radius: var(--wpasb-radius);
@@ -365,8 +384,8 @@
 }
 
 .wpasb-search-empty {
-	margin-top: 24px;
-	padding: 24px;
+	margin-top: 16px;
+	padding: 20px;
 	border: 1px dashed var(--wpasb-line-strong);
 	border-radius: var(--wpasb-radius-lg);
 	background: var(--wpasb-surface-2);
@@ -379,154 +398,177 @@
 	margin-left: 6px;
 }
 
-/* --------------------------------------------------------------------
- * Module groups and cards
- * ------------------------------------------------------------------ */
-.wpasb-module-group {
-	margin-top: 40px;
-}
-
-.wpasb-module-group.is-filtered-out {
-	display: none;
-}
-
-.wpasb-group-header {
-	display: grid;
-	grid-template-columns: 1fr auto;
-	gap: 2px 16px;
-	padding-bottom: 12px;
-	border-bottom: 1px solid var(--wpasb-line);
-}
-
-.wpasb-group-title {
-	font-size: 15px;
-	letter-spacing: .01em;
-}
-
-.wpasb-group-count {
-	grid-column: 2;
-	grid-row: 1;
-	align-self: center;
-	color: var(--wpasb-ink-4);
+/*
+ * The bulk toggle sits beside the search box, so it matches that control's
+ * height exactly — a shorter ghost button reads as misaligned next to it.
+ */
+.wpasb-page .wpasb-toggle-all {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	min-height: 34px;
+	padding: 0 14px;
+	border: 1px solid var(--wpasb-line-strong);
+	border-radius: var(--wpasb-radius);
+	background: var(--wpasb-surface);
+	color: var(--wpasb-ink-2);
 	font-size: 12px;
-	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	line-height: 1;
+	cursor: pointer;
+	white-space: nowrap;
 }
 
-.wpasb-group-description {
-	grid-column: 1 / -1;
-	color: var(--wpasb-ink-3);
-	font-size: 13px;
+.wpasb-page .wpasb-toggle-all:hover {
+	border-color: var(--wpasb-ink);
+	color: var(--wpasb-ink);
 }
 
-.wpasb-module-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-	gap: 16px;
+.wpasb-page .wpasb-toggle-all:focus-visible {
+	outline: 2px solid var(--wpasb-ink);
+	outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------
+ * Compact module list
+ *
+ * One row per module inside a single bordered list. Group names are plain
+ * labels between rows, not boxes, so related modules stay together without
+ * adding a heading block and its margins to the scroll length.
+ * ------------------------------------------------------------------ */
+.wpasb-module-list {
 	margin-top: 16px;
-}
-
-.wpasb-module-card {
-	display: flex;
-	flex-direction: column;
-	padding: 20px;
 	border: 1px solid var(--wpasb-line);
 	border-radius: var(--wpasb-radius-lg);
 	background: var(--wpasb-surface);
-	transition: border-color .15s ease, box-shadow .15s ease;
+	overflow: hidden;
 }
 
-.wpasb-module-card:hover {
-	border-color: var(--wpasb-line-strong);
+.wpasb-list-group {
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--wpasb-line);
+	background: var(--wpasb-surface-2);
+	color: var(--wpasb-ink-3);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
 }
 
-.wpasb-module-card.is-off {
+.wpasb-list-group:not(:first-child) {
+	border-top: 1px solid var(--wpasb-line);
+}
+
+.wpasb-list-group.is-filtered-out {
+	display: none;
+}
+
+.wpasb-module-row {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0 12px;
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--wpasb-line);
+}
+
+.wpasb-module-row:last-child {
+	border-bottom: 0;
+}
+
+.wpasb-module-row:hover {
 	background: var(--wpasb-surface-2);
 }
 
+.wpasb-module-row.is-filtered-out {
+	display: none;
+}
+
 /* Pending edits are marked by a left rule, not a colour. */
-.wpasb-module-card.is-changed {
-	border-color: var(--wpasb-ink-4);
+.wpasb-module-row.is-changed {
 	box-shadow: inset 3px 0 0 0 var(--wpasb-ink);
 }
 
-.wpasb-module-card.is-filtered-out {
-	display: none;
-}
-
-.wpasb-module-card--wide {
-	grid-column: 1 / -1;
-}
-
-.wpasb-module-heading {
+/*
+ * Name and description share one line and truncate rather than wrap, so a
+ * long description can never make one row taller than the rest.
+ */
+.wpasb-row-text {
 	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 16px;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 2px 10px;
+	min-width: 0;
 }
 
-.wpasb-module-title {
-	font-size: 14px;
-}
-
-.wpasb-module-summary-text {
-	margin-top: 8px;
-	color: var(--wpasb-ink-2);
-	font-size: 13px;
-}
-
-.wpasb-module-details {
-	margin-top: 10px;
-	font-size: 13px;
-}
-
-.wpasb-module-details > summary {
-	color: var(--wpasb-ink-3);
-	font-size: 12px;
-	font-weight: 600;
-	cursor: pointer;
-	list-style: none;
-}
-
-.wpasb-module-details > summary::-webkit-details-marker {
-	display: none;
-}
-
-.wpasb-module-details > summary::before {
-	content: "+ ";
-}
-
-.wpasb-module-details[open] > summary::before {
-	content: "– ";
-}
-
-.wpasb-module-details > summary:hover {
+.wpasb-row-name {
 	color: var(--wpasb-ink);
-}
-
-.wpasb-module-details > p {
-	margin-top: 8px;
-	color: var(--wpasb-ink-3);
-}
-
-.wpasb-module-state {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	margin-top: auto;
-	padding-top: 16px;
-	color: var(--wpasb-ink-4);
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 600;
 }
 
-.wpasb-module-state[data-state="on"] {
-	color: var(--wpasb-ink);
+.wpasb-row-desc {
+	flex: 1 1 260px;
+	min-width: 0;
+	color: var(--wpasb-ink-3);
+	font-size: 12px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
-.wpasb-module-state[data-state="pending"] {
+.wpasb-module-row.is-off .wpasb-row-name {
 	color: var(--wpasb-ink-2);
-	font-style: italic;
 }
+
+/* A dot, not a word: the toggle already states on or off. */
+.wpasb-row-state {
+	flex: none;
+	width: 8px;
+	height: 8px;
+	border: 1px solid var(--wpasb-ink-4);
+	border-radius: 50%;
+	background: transparent;
+}
+
+.wpasb-row-state[data-state="on"] {
+	border-color: var(--wpasb-ink);
+	background: var(--wpasb-ink);
+}
+
+.wpasb-row-state[data-state="pending"] {
+	border-color: var(--wpasb-ink);
+	background: repeating-linear-gradient(
+		45deg,
+		var(--wpasb-ink) 0 2px,
+		transparent 2px 4px
+	);
+}
+
+/* The two modules with settings expand into a full-width panel below. */
+.wpasb-module-row--expandable {
+	grid-template-areas:
+		"toggle text state"
+		"panel panel panel";
+}
+
+.wpasb-module-row--expandable > .wpasb-toggle {
+	grid-area: toggle;
+}
+
+.wpasb-module-row--expandable > .wpasb-row-text {
+	grid-area: text;
+}
+
+.wpasb-module-row--expandable > .wpasb-row-state {
+	grid-area: state;
+}
+
+.wpasb-module-row--expandable > .wpasb-module-settings,
+.wpasb-module-row--expandable > .wpasb-module-settings-hint {
+	grid-area: panel;
+}
+
 
 /* --------------------------------------------------------------------
  * Toggle
@@ -1011,7 +1053,9 @@
 
 .wpasb-server-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+	/* min() keeps the track from demanding 380px on a 360px viewport, which
+	   is what pushed the whole page into horizontal scroll on phones. */
+	grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
 	gap: 16px;
 	margin-top: 16px;
 	align-items: start;
