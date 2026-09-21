@@ -207,28 +207,29 @@ class WPASB_Updater {
 			$line  = __( 'You are running the latest version.', 'wp-admin-speedboost' );
 		}
 		?>
-		<div class="wpasb-update-status wpasb-update-status--<?php echo esc_attr( $state ); ?>">
-			<p>
-				<strong><?php esc_html_e( 'Updates', 'wp-admin-speedboost' ); ?></strong><br>
-				<?php
-				/* translators: %s: version number */
-				printf( esc_html__( 'Installed: %s', 'wp-admin-speedboost' ), esc_html( WPASB_VERSION ) );
-				?>
-				&nbsp;&middot;&nbsp;
-				<?php echo esc_html( $line ); ?>
+		<div class="wpasb-update-strip wpasb-update-strip--<?php echo esc_attr( $state ); ?>">
+			<p class="wpasb-update-state">
+				<span class="wpasb-update-version">
+					<?php
+					/* translators: %s: installed version number */
+					printf( esc_html__( 'Version %s', 'wp-admin-speedboost' ), esc_html( WPASB_VERSION ) );
+					?>
+				</span>
+				<span aria-hidden="true">&middot;</span>
+				<span class="wpasb-update-line"><?php echo esc_html( $line ); ?></span>
 			</p>
-			<p>
+			<p class="wpasb-update-actions">
 				<?php if ( 'available' === $state ) : ?>
-					<a class="button button-primary" href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>">
+					<a class="wpasb-btn wpasb-btn--primary" href="<?php echo esc_url( admin_url( 'plugins.php' ) ); ?>">
 						<?php esc_html_e( 'Go to Plugins to update', 'wp-admin-speedboost' ); ?>
 					</a>
 				<?php endif; ?>
-				<a class="button" href="<?php echo esc_url( self::check_url( admin_url( 'options-general.php?page=wp-admin-speedboost' ) ) ); ?>">
-					<?php esc_html_e( 'Check again', 'wp-admin-speedboost' ); ?>
+				<a class="wpasb-btn" href="<?php echo esc_url( self::check_url( admin_url( 'options-general.php?page=wp-admin-speedboost' ) ) ); ?>">
+					<?php echo 'error' === $state ? esc_html__( 'Try again', 'wp-admin-speedboost' ) : esc_html__( 'Check again', 'wp-admin-speedboost' ); ?>
 				</a>
 				<?php if ( null !== $release && ! empty( $release['url'] ) ) : ?>
-					<a class="button-link" href="<?php echo esc_url( $release['url'] ); ?>" target="_blank" rel="noopener noreferrer">
-						<?php esc_html_e( 'View release notes', 'wp-admin-speedboost' ); ?>
+					<a class="wpasb-link-button" href="<?php echo esc_url( $release['url'] ); ?>" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( 'Release notes', 'wp-admin-speedboost' ); ?>
 					</a>
 				<?php endif; ?>
 			</p>

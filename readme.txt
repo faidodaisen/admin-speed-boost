@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,17 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.7.0 =
+* Changed: Redesigned the settings screen as a monochrome control panel. The oversized promotional header and the repeated per-module cards are gone; the page now opens with a compact identity header that reports how many of the 17 modules are enabled, followed by the version and update strip, the modules, database cleanup and server recommendations.
+* Added: Modules are grouped by what they actually do — Performance, Less admin noise, Security & access, and Editing & login — instead of one undifferentiated list, with a per-group count of how many are selected.
+* Added: Module search. Filtering narrows the visible modules and reports how many of the total are showing.
+* Added: Unsaved-change tracking. Toggling a module marks the page dirty, the header switches to "X of 17 selected / Unsaved changes", each changed card states whether it will enable or disable when saved, and a save bar appears with Save and Discard.
+* Changed: Database cleanup now runs over AJAX. Reviewing, confirming and running a cleanup no longer reloads the page; the result appears in place with the number of revisions, expired transients and orphaned meta rows removed, tables optimised, and InnoDB tables deliberately skipped.
+* Added: A site-wide lock prevents two tabs from running destructive cleanup queries at the same time, and a cleanup whose connection is lost reports that it may still be running instead of inviting an immediate retry.
+* Changed: Long module descriptions collapse into a Details disclosure so cards no longer vary wildly in height. No description text was rewritten or dropped.
+* Changed: The update strip reports the installed version and the real check status. A failed check now says so and offers Try again rather than displaying "Up to date".
+* Fixed: Cleanup without JavaScript still works. The confirmed form post, its nonce and its admin notice are unchanged.
 
 = 1.6.0 =
 * Added: Automatic updates from GitHub releases. The plugin is not on wordpress.org, so WordPress had no update source for it and the Plugins screen never reported new versions. It now asks the GitHub Releases API for the newest tagged release, and an available update appears on the Plugins and Updates screens exactly like any hosted plugin, one-click install included.

@@ -14,9 +14,87 @@ class WPASB_DB_Cleanup {
 	 */
 	const REPORT_TRANSIENT = 'wpasb_cleanup_report_';
 
+	/**
+	 * Site-scoped lock so two browser tabs (or a double submit that beat the
+	 * client-side guard) cannot run destructive queries concurrently.
+	 */
+	const LOCK_TRANSIENT = 'wpasb_cleanup_running';
+
 	public function __construct() {
 		add_action( 'admin_post_wpasb_cleanup', [ $this, 'handle' ] );
 		add_action( 'admin_notices', [ $this, 'maybe_notice' ] );
+		add_action( 'wp_ajax_wpasb_cleanup', [ $this, 'ajax' ] );
+	}
+
+	/**
+	 * AJAX entry point. Same capability and nonce guards as the POST route, but
+	 * returns the structured report instead of redirecting, so the settings page
+	 * keeps its scroll position and any unsaved module edits.
+	 */
+	public function ajax() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				[
+					'state'   => 'error',
+					'message' => __( 'You need administrator permission to run this cleanup.', 'wp-admin-speedboost' ),
+				],
+				403
+			);
+		}
+
+		if ( ! check_ajax_referer( 'wpasb_cleanup', 'nonce', false ) ) {
+			wp_send_json_error(
+				[
+					'state'   => 'error',
+					'message' => __( 'This page has been open too long. Save any unsaved settings, then reload the page and try again.', 'wp-admin-speedboost' ),
+				],
+				403
+			);
+		}
+
+		if ( get_transient( self::LOCK_TRANSIENT ) ) {
+			wp_send_json_error(
+				[
+					'state'   => 'error',
+					'message' => __( 'A cleanup is already running on this site. Wait for it to finish before starting another.', 'wp-admin-speedboost' ),
+				],
+				409
+			);
+		}
+
+		set_transient( self::LOCK_TRANSIENT, 1, 10 * MINUTE_IN_SECONDS );
+
+		try {
+			$report = $this->run();
+		} catch ( Throwable $e ) {
+			delete_transient( self::LOCK_TRANSIENT );
+			wp_send_json_error(
+				[
+					'state'   => 'error',
+					'message' => __( 'The cleanup stopped before it finished. Nothing else was deleted.', 'wp-admin-speedboost' ),
+				],
+				500
+			);
+		}
+
+		delete_transient( self::LOCK_TRANSIENT );
+
+		wp_send_json_success(
+			[
+				'state'   => 'success',
+				'message' => __( 'The database was cleaned. Here is what changed.', 'wp-admin-speedboost' ),
+				'report'  => [
+					'revisions'      => (int) $report['revisions'],
+					'transients'     => (int) $report['transients'],
+					'orphan_meta'    => (int) $report['orphan_meta'],
+					'tables'         => (int) $report['tables'],
+					'skipped_innodb' => (int) $report['skipped_innodb'],
+				],
+				'note'    => ! empty( $report['skipped_innodb'] )
+					? __( 'InnoDB tables were skipped on purpose: InnoDB reclaims space by itself and OPTIMIZE would rebuild and lock them.', 'wp-admin-speedboost' )
+					: '',
+			]
+		);
 	}
 
 	/**
@@ -34,7 +112,16 @@ class WPASB_DB_Cleanup {
 
 		check_admin_referer( 'wpasb_cleanup', 'wpasb_cleanup_nonce' );
 
+		if ( get_transient( self::LOCK_TRANSIENT ) ) {
+			wp_safe_redirect( admin_url( 'options-general.php?page=wp-admin-speedboost' ) );
+			exit;
+		}
+
+		set_transient( self::LOCK_TRANSIENT, 1, 10 * MINUTE_IN_SECONDS );
+
 		$report = $this->run();
+
+		delete_transient( self::LOCK_TRANSIENT );
 
 		set_transient( self::REPORT_TRANSIENT . get_current_user_id(), $report, 5 * MINUTE_IN_SECONDS );
 
