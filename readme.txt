@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,12 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.7.2 =
+* Fixed: The "Login path" and "Redirect path" inputs were squeezed to a few unusable pixels on narrower admin columns. A grid item's automatic minimum size let the site-URL prefix hold its full width and starve the input, so the login slug was clipped to something like "sec" while the redirect value overflowed the field. The columns now collapse to one per row below 1100px, the prefix can shrink and ellipsise, and the input keeps a usable minimum width.
+* Fixed: The dark "Database cleanup" band sat lower than every other section on the page. Absolutely positioned status regions were not actually being hidden, so an empty 1px paragraph pushed the band down and broke its alignment with the content column.
+* Fixed: A phantom gap of roughly 120px between the module list and "Database cleanup" when the form was clean. The save bar was hidden with `visibility` alone, so it still reserved its full height and margin while invisible.
+* Fixed: The cleanup description and the "Permanently deletes data" warning were touching, with no space between them.
 
 = 1.7.1 =
 * Changed: The module list is now a single compact list — one row per module, name and short description on the same line. The separate cards and their headed group boxes are gone, which removes most of the page's scroll length.

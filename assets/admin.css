@@ -68,6 +68,25 @@
 	margin: 0;
 }
 
+/*
+ * Must outrank `.wpasb-cleanup-announcement` and every other class that sets
+ * `display` on a status paragraph, or the visually hidden live regions render
+ * as stray 1px-tall lines — and, worse, push the dark cleanup band ~19px below
+ * its neighbours' left edge on the page.
+ */
+.wpasb-page .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
 .wpasb-section-title {
 	font-size: 20px;
 	letter-spacing: -0.01em;
@@ -652,6 +671,23 @@
 	gap: 16px;
 }
 
+/*
+ * Grid items default to min-width:auto, so a long "https://site.com/" prefix
+ * would keep these columns at their content width and squeeze the actual
+ * input down to a few unusable pixels — the narrower the admin column, the
+ * worse it gets. Give the columns a real floor: below ~320px each, the fields
+ * drop one per row and the input keeps the full card width.
+ */
+.wpasb-field {
+	min-width: 0;
+}
+
+@media (max-width: 1100px) {
+	.wpasb-field-row {
+		grid-template-columns: 1fr;
+	}
+}
+
 .wpasb-field-label {
 	display: block;
 	margin-bottom: 6px;
@@ -671,6 +707,8 @@
 .wpasb-url-prefix {
 	display: flex;
 	align-items: center;
+	flex: 0 1 auto;
+	min-width: 0;
 	padding: 0 8px;
 	border-right: 1px solid var(--wpasb-line);
 	background: var(--wpasb-surface-3);
@@ -683,9 +721,10 @@
 	text-overflow: ellipsis;
 }
 
+/* The typed value is the point of the field: never let the prefix starve it. */
 .wpasb-url-field input[type="text"] {
 	flex: 1 1 auto;
-	min-width: 0;
+	min-width: 8ch;
 	min-height: 34px;
 	margin: 0;
 	padding: 0 10px;
@@ -785,7 +824,13 @@
 	justify-content: space-between;
 	flex-wrap: wrap;
 	gap: 16px;
-	margin-top: 40px;
+	/*
+	 * The bar is invisible until the form is dirty, and it must not spend any
+	 * space until then: visibility alone still collapses to its own height plus
+	 * this margin, which left a phantom 120px gap between the module list and
+	 * Database cleanup.
+	 */
+	display: none;
 	padding: 16px 20px;
 	border: 1px solid var(--wpasb-line-strong);
 	border-radius: var(--wpasb-radius-lg);
@@ -799,6 +844,8 @@
 }
 
 .wpasb-savebar.is-visible {
+	display: flex;
+	margin-top: 40px;
 	visibility: visible;
 	opacity: 1;
 	transform: none;
@@ -857,6 +904,12 @@
 
 .wpasb-cleanup-desc {
 	margin-top: 8px;
+	/*
+	 * The description and the warning are both children of a flex column that
+	 * sets `gap`, but the gap resolves to 0 for a block-level child in older
+	 * flex engines and the two lines end up touching. Space them explicitly.
+	 */
+	margin-bottom: 14px;
 	color: var(--wpasb-dark-ink-2);
 	font-size: 13px;
 }
