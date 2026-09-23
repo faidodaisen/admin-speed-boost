@@ -562,6 +562,18 @@ class WPASB_Settings_Page {
 					</div>
 				</section>
 
+				<footer class="wpasb-footer">
+					<p class="wpasb-footer-credit">
+						<?php
+						printf(
+							/* translators: %s: link to the plugin author's website */
+							esc_html__( 'WP Admin Speedboost by %s', 'wp-admin-speedboost' ),
+							'<a href="https://fidodesign.net/" target="_blank" rel="noopener noreferrer">FidoDesign</a>'
+						);
+						?>
+					</p>
+				</footer>
+
 			</div>
 		</div>
 		<?php

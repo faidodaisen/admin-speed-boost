@@ -45,10 +45,22 @@
 	box-sizing: border-box;
 }
 
+/*
+ * The shell is a flex column so a trailing block child (the footer) cannot end
+ * up beside the last section: flex-wrap on siblings would otherwise let it
+ * slide into the free space next to the server cards.
+ */
 .wpasb-shell {
+	display: flex;
+	flex-direction: column;
 	max-width: 1280px;
 	margin: 0 auto;
 	padding: 0 32px 96px;
+}
+
+.wpasb-shell > * {
+	flex: 0 0 auto;
+	min-width: 0;
 }
 
 /* --------------------------------------------------------------------
@@ -757,7 +769,7 @@
 	overflow-wrap: anywhere;
 }
 
-.wpasb-field-warning {
+.wpasb-page .wpasb-field-warning {
 	display: flex;
 	align-items: flex-start;
 	gap: 8px;
@@ -1224,6 +1236,33 @@
 	margin-top: 12px;
 	color: var(--wpasb-ink-4);
 	font-size: 12px;
+}
+
+/* --------------------------------------------------------------------
+ * Footer credit
+ * ------------------------------------------------------------------ */
+.wpasb-footer {
+	margin-top: 40px;
+	padding-top: 20px;
+	border-top: 1px solid var(--wpasb-line);
+}
+
+.wpasb-footer-credit {
+	color: var(--wpasb-ink-4);
+	font-size: 12px;
+}
+
+.wpasb-page .wpasb-footer-credit a {
+	color: var(--wpasb-ink-2);
+	font-weight: 600;
+	text-decoration: none;
+	border-bottom: 1px solid var(--wpasb-line-strong);
+}
+
+.wpasb-page .wpasb-footer-credit a:hover,
+.wpasb-page .wpasb-footer-credit a:focus {
+	color: var(--wpasb-ink);
+	border-bottom-color: var(--wpasb-ink);
 }
 
 /* --------------------------------------------------------------------

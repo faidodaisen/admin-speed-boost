@@ -196,8 +196,28 @@ foreach ( [ 'form', 'section', 'div' ] as $tag ) {
 	expect( $open === $close, "unbalanced <$tag>: $open open vs $close close", $failures );
 }
 
-// No external asset may be referenced.
-expect( ! preg_match( '#(src|href)="https?://(?!example\.test)#', $html ), 'external asset referenced', $failures );
+// No external *asset* may be referenced. A plain anchor is fine — the footer
+// credit links to the author's site — but anything the browser would fetch
+// (stylesheet, script, image, font) must stay local.
+$asset_tags = [ 'link', 'script', 'img', 'iframe', 'source', 'audio', 'video' ];
+foreach ( $asset_tags as $tag ) {
+	if ( preg_match_all( '/<' . $tag . '\b[^>]*>/i', $html, $m ) ) {
+		foreach ( $m[0] as $element ) {
+			expect(
+				! preg_match( '#(src|href)\s*=\s*["\']https?://(?!example\.test)#i', $element ),
+				"external asset referenced in <$tag>: " . substr( $element, 0, 120 ),
+				$failures
+			);
+		}
+	}
+}
+
+// The only outbound link on the page is the footer credit.
+expect(
+	0 === preg_match( '#<a\b[^>]*href="https?://(?!fidodesign\.net)#i', $html ),
+	'anchors must not point anywhere except the fidodesign.net credit',
+	$failures
+);
 
 echo 'Rendered ' . strlen( $html ) . " bytes, $total modules, $active enabled.\n";
 

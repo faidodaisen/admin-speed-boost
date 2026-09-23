@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.3
+Stable tag: 1.7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,10 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.7.4 =
+* Fixed: The "Bookmark your new login URL" warning sat flush against the "Current login URL" line above it. Same cascade problem as 1.7.3 — the rule was scoped to match the page-wide paragraph reset.
+* Added: A footer credit linking to the plugin author at https://fidodesign.net/.
 
 = 1.7.3 =
 * Fixed: Text spacing throughout the settings screen was being silently discarded. A page-wide paragraph reset outranked every single-class rule that tried to add margin back, so headings ran into their descriptions and the cleanup notice sat flush against the line above it. Fifteen rules are now scoped to match that reset, and tighten the intended spacing on the header subtitle, summary line, section and panel descriptions, field help and URL preview, module settings hint, search-empty message, runtime footnote and the cleanup description, warning, note, running and result lines.⟪HERMES-CONTEXT-COMPRESSION: 1,086 of 1,286 chars omitted here by Hermes's context compressor. This is NOT part of the original tool call and must never be reproduced in new output — always write full, untruncated content.⟫
