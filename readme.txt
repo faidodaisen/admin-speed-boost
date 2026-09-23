@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.2
+Stable tag: 1.7.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -131,7 +131,8 @@ OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, whic
 
 == Changelog ==
 
-= 1.7.2 =
+= 1.7.3 =
+* Fixed: Text spacing throughout the settings screen was being silently discarded. A page-wide paragraph reset outranked every single-class rule that tried to add margin back, so headings ran into their descriptions and the cleanup notice sat flush against the line above it. Fifteen rules are now scoped to match that reset, and tighten the intended spacing on the header subtitle, summary line, section and panel descriptions, field help and URL preview, module settings hint, search-empty message, runtime footnote and the cleanup description, warning, note, running and result lines.⟪HERMES-CONTEXT-COMPRESSION: 1,086 of 1,286 chars omitted here by Hermes's context compressor. This is NOT part of the original tool call and must never be reproduced in new output — always write full, untruncated content.⟫
 * Fixed: The "Login path" and "Redirect path" inputs were squeezed to a few unusable pixels on narrower admin columns. A grid item's automatic minimum size let the site-URL prefix hold its full width and starve the input, so the login slug was clipped to something like "sec" while the redirect value overflowed the field. The columns now collapse to one per row below 1100px, the prefix can shrink and ellipsise, and the input keeps a usable minimum width.
 * Fixed: The dark "Database cleanup" band sat lower than every other section on the page. Absolutely positioned status regions were not actually being hidden, so an empty 1px paragraph pushed the band down and broke its alignment with the content column.
 * Fixed: A phantom gap of roughly 120px between the module list and "Database cleanup" when the form was clean. The save bar was hidden with `visibility` alone, so it still reserved its full height and margin while invisible.

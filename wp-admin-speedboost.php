@@ -3,7 +3,7 @@
  * Plugin Name:       WP Admin Speedboost
  * Plugin URI:        https://fidodesign.dev/
  * Description:       Modular WordPress admin performance booster. 17 toggle-able modules: heartbeat throttle, dashboard widget cleanup, disable comments, REST lockdown, emoji/oEmbed disable, jQuery Migrate kill, classic editor, XML-RPC disable, hide login URL, custom login page, duplicate page & post, and more. Plus one-click DB cleanup.
- * Version:           1.7.2
+ * Version:           1.7.3
  * Requires at least: 5.6
  * Tested up to:      7.1
  * Requires PHP:      7.4
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WPASB_VERSION', '1.7.2' );
+define( 'WPASB_VERSION', '1.7.3' );
 define( 'WPASB_FILE', __FILE__ );
 define( 'WPASB_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPASB_URL', plugin_dir_url( __FILE__ ) );

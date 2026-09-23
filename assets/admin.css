@@ -64,6 +64,12 @@
 	line-height: 1.25;
 }
 
+/*
+ * Every paragraph on the page is reset to zero margin, which means any single
+ * class that wants to add margin back — `.wpasb-cleanup-desc` and friends — has
+ * to be written as `.wpasb-page .thing` (0,2,0) or it silently loses to this
+ * rule (0,1,1). A lone class never wins, no matter where it sits in the file.
+ */
 .wpasb-page p {
 	margin: 0;
 }
@@ -92,7 +98,7 @@
 	letter-spacing: -0.01em;
 }
 
-.wpasb-section-desc {
+.wpasb-page .wpasb-section-desc {
 	margin-top: 6px;
 	color: var(--wpasb-ink-3);
 	font-size: 13px;
@@ -122,7 +128,7 @@
 	letter-spacing: -0.02em;
 }
 
-.wpasb-header-subtitle {
+.wpasb-page .wpasb-header-subtitle {
 	margin-top: 4px;
 	color: var(--wpasb-ink-3);
 	font-size: 14px;
@@ -138,7 +144,7 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.wpasb-summary-state {
+.wpasb-page .wpasb-summary-state {
 	margin-top: 2px;
 	color: var(--wpasb-ink-4);
 	font-size: 12px;
@@ -402,7 +408,7 @@
 	color: var(--wpasb-ink);
 }
 
-.wpasb-search-empty {
+.wpasb-page .wpasb-search-empty {
 	margin-top: 16px;
 	padding: 20px;
 	border: 1px dashed var(--wpasb-line-strong);
@@ -658,7 +664,7 @@
 	background: var(--wpasb-surface-2);
 }
 
-.wpasb-module-settings-hint {
+.wpasb-page .wpasb-module-settings-hint {
 	margin-top: 12px;
 	color: var(--wpasb-ink-4);
 	font-size: 12px;
@@ -744,7 +750,7 @@
 	border-color: var(--wpasb-ink);
 }
 
-.wpasb-url-preview {
+.wpasb-page .wpasb-url-preview {
 	margin-top: 12px;
 	color: var(--wpasb-ink-2);
 	font-size: 13px;
@@ -765,7 +771,7 @@
 	font-weight: 600;
 }
 
-.wpasb-field-help {
+.wpasb-page .wpasb-field-help {
 	margin-top: 10px;
 	color: var(--wpasb-ink-3);
 	font-size: 12px;
@@ -902,19 +908,19 @@
 	color: #FFFFFF;
 }
 
-.wpasb-cleanup-desc {
-	margin-top: 8px;
-	/*
-	 * The description and the warning are both children of a flex column that
-	 * sets `gap`, but the gap resolves to 0 for a block-level child in older
-	 * flex engines and the two lines end up touching. Space them explicitly.
-	 */
-	margin-bottom: 14px;
+/*
+ * Scoped to .wpasb-page deliberately: the page-wide `.wpasb-page p` reset
+ * outranks a lone class, so this spacing was being dropped and the two lines
+ * touched. Match its specificity instead of fighting it.
+ */
+.wpasb-page .wpasb-cleanup-desc {
+	margin-top: 10px;
+	margin-bottom: 16px;
 	color: var(--wpasb-dark-ink-2);
 	font-size: 13px;
 }
 
-.wpasb-cleanup-warning {
+.wpasb-page .wpasb-cleanup-warning {
 	display: flex;
 	align-items: flex-start;
 	gap: 8px;
@@ -955,7 +961,7 @@
 	margin: 0 0 4px;
 }
 
-.wpasb-cleanup-note {
+.wpasb-page .wpasb-cleanup-note {
 	margin-top: 12px;
 	color: var(--wpasb-dark-ink-2);
 	font-size: 12px;
@@ -978,7 +984,7 @@
 	display: none !important;
 }
 
-.wpasb-cleanup-running {
+.wpasb-page .wpasb-cleanup-running {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -1045,7 +1051,7 @@
 	content: "?";
 }
 
-.wpasb-cleanup-result-message {
+.wpasb-page .wpasb-cleanup-result-message {
 	margin-top: 8px;
 	color: var(--wpasb-dark-ink-2);
 	font-size: 13px;
@@ -1086,7 +1092,7 @@
 	letter-spacing: -0.01em;
 }
 
-.wpasb-cleanup-result-note {
+.wpasb-page .wpasb-cleanup-result-note {
 	margin-top: 12px;
 	color: var(--wpasb-dark-ink-2);
 	font-size: 12px;
@@ -1125,7 +1131,7 @@
 	font-size: 14px;
 }
 
-.wpasb-panel-desc {
+.wpasb-page .wpasb-panel-desc {
 	margin-top: 8px;
 	color: var(--wpasb-ink-3);
 	font-size: 13px;
@@ -1214,7 +1220,7 @@
 	color: var(--wpasb-ink-4);
 }
 
-.wpasb-runtime-footnote {
+.wpasb-page .wpasb-runtime-footnote {
 	margin-top: 12px;
 	color: var(--wpasb-ink-4);
 	font-size: 12px;
