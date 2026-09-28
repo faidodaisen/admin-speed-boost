@@ -1,0 +1,283 @@
+/**
+ * WP Admin Speedboost — Admin Menu Editor screen.
+ *
+ * Builds on admin.css (tokens, header, toggle, search, save bar). Everything
+ * here is scoped under .wpasb-menu-page so it cannot reach the Modules screen.
+ */
+
+/* Scope switch ---------------------------------------------------------- */
+.wpasb-menu-page .wpasb-menu-scope {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 16px;
+	margin-top: 16px;
+	padding: 12px 16px;
+	border: 1px solid var(--wpasb-line);
+	border-radius: var(--wpasb-radius-lg);
+	background: var(--wpasb-surface);
+}
+
+.wpasb-menu-page .wpasb-menu-scope-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.wpasb-menu-page .wpasb-menu-scope-label input {
+	margin: 0;
+}
+
+.wpasb-menu-page .wpasb-menu-scope-help {
+	color: var(--wpasb-ink-3);
+	font-size: 12px;
+}
+
+/* List ------------------------------------------------------------------ */
+.wpasb-menu-page .wpasb-menu-list,
+.wpasb-menu-page .wpasb-menu-sub {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wpasb-menu-page .wpasb-menu-list {
+	margin-top: 16px;
+	border: 1px solid var(--wpasb-line);
+	border-radius: var(--wpasb-radius-lg);
+	background: var(--wpasb-surface);
+	overflow: hidden;
+}
+
+.wpasb-menu-page .wpasb-menu-item {
+	margin: 0;
+	border-bottom: 1px solid var(--wpasb-line);
+}
+
+.wpasb-menu-page .wpasb-menu-item:last-child {
+	border-bottom: 0;
+}
+
+.wpasb-menu-page .wpasb-menu-item.is-filtered-out,
+.wpasb-menu-page .wpasb-menu-child.is-filtered-out {
+	display: none;
+}
+
+.wpasb-menu-page .wpasb-menu-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 48px;
+	padding: 8px 16px;
+}
+
+.wpasb-menu-page .wpasb-menu-item > .wpasb-menu-row:hover,
+.wpasb-menu-page .wpasb-menu-child > .wpasb-menu-row:hover {
+	background: var(--wpasb-surface-2);
+}
+
+.wpasb-menu-page .is-changed > .wpasb-menu-row {
+	box-shadow: inset 3px 0 0 0 var(--wpasb-ink);
+}
+
+.wpasb-menu-page .wpasb-toggle--placeholder {
+	visibility: hidden;
+}
+
+.wpasb-menu-page .wpasb-menu-input[disabled] {
+	cursor: not-allowed;
+	/* wp-admin forms.css gives disabled checkboxes opacity .7; keep it invisible. */
+	opacity: 0 !important;
+}
+
+.wpasb-menu-page .wpasb-menu-input[disabled] + .wpasb-toggle-slider {
+	opacity: .45;
+}
+
+/* Icon */
+.wpasb-menu-page .wpasb-menu-icon {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	color: var(--wpasb-ink-3);
+	font-size: 20px;
+	line-height: 20px;
+}
+
+.wpasb-menu-page .wpasb-menu-icon--svg {
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 18px auto;
+	filter: grayscale(1) brightness(.4);
+}
+
+.wpasb-menu-page .wpasb-menu-icon--none::before {
+	content: "";
+	display: block;
+	width: 6px;
+	height: 6px;
+	margin: 7px;
+	border-radius: 50%;
+	background: var(--wpasb-line-strong);
+}
+
+/* Text */
+.wpasb-menu-page .wpasb-menu-text {
+	display: flex;
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 2px 10px;
+	min-width: 0;
+}
+
+.wpasb-menu-page .wpasb-menu-label {
+	color: var(--wpasb-ink);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.wpasb-menu-page .wpasb-menu-slug {
+	min-width: 0;
+	max-width: 100%;
+	padding: 0;
+	background: none;
+	color: var(--wpasb-ink-4);
+	font-size: 11px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wpasb-menu-page .wpasb-menu-badge {
+	padding: 1px 8px;
+	border: 1px solid var(--wpasb-line-strong);
+	border-radius: 999px;
+	color: var(--wpasb-ink-3);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.wpasb-menu-page .wpasb-menu-warning {
+	flex-basis: 100%;
+	color: var(--wpasb-ink);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.wpasb-menu-page .wpasb-menu-follows {
+	display: none;
+	color: var(--wpasb-ink-4);
+	font-size: 12px;
+	font-style: italic;
+}
+
+/* Hidden state: the label dims, the row stays readable. */
+.wpasb-menu-page .is-off > .wpasb-menu-row .wpasb-menu-label {
+	color: var(--wpasb-ink-4);
+	text-decoration: line-through;
+	text-decoration-thickness: 1px;
+}
+
+.wpasb-menu-page .is-off > .wpasb-menu-row .wpasb-menu-icon {
+	opacity: .4;
+}
+
+/* Expand button */
+.wpasb-menu-page .wpasb-menu-expand {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	gap: 6px;
+	min-height: 30px;
+	padding: 0 8px;
+	border: 1px solid transparent;
+	border-radius: var(--wpasb-radius);
+	background: transparent;
+	color: var(--wpasb-ink-3);
+	font: inherit;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+}
+
+.wpasb-menu-page .wpasb-menu-expand:hover {
+	background: var(--wpasb-surface-3);
+	color: var(--wpasb-ink);
+}
+
+.wpasb-menu-page .wpasb-menu-expand:focus-visible {
+	outline: 2px solid var(--wpasb-ink);
+	outline-offset: 1px;
+}
+
+.wpasb-menu-page .wpasb-menu-expand .wpasb-icon {
+	transition: transform .15s ease;
+}
+
+.wpasb-menu-page .wpasb-menu-expand[aria-expanded="true"] .wpasb-icon {
+	transform: rotate(90deg);
+}
+
+/* Submenu */
+.wpasb-menu-page .wpasb-menu-sub {
+	border-top: 1px solid var(--wpasb-line);
+	background: var(--wpasb-surface-2);
+}
+
+.wpasb-menu-page .wpasb-menu-child {
+	margin: 0;
+	border-bottom: 1px solid var(--wpasb-line);
+}
+
+.wpasb-menu-page .wpasb-menu-child:last-child {
+	border-bottom: 0;
+}
+
+.wpasb-menu-page .wpasb-menu-child > .wpasb-menu-row {
+	min-height: 42px;
+	padding-left: 48px;
+}
+
+.wpasb-menu-page .wpasb-menu-child .wpasb-menu-label {
+	font-weight: 500;
+}
+
+/* Parent hidden: children follow it and cannot be changed. */
+.wpasb-menu-page .wpasb-menu-item.is-off .wpasb-menu-child .wpasb-toggle {
+	opacity: .35;
+	pointer-events: none;
+}
+
+.wpasb-menu-page .wpasb-menu-item.is-off .wpasb-menu-follows {
+	display: inline;
+}
+
+.wpasb-menu-page .wpasb-menu-empty,
+.wpasb-menu-page .wpasb-menu-note {
+	margin-top: 16px;
+	color: var(--wpasb-ink-3);
+	font-size: 12px;
+}
+
+.wpasb-menu-page .wpasb-menu-note code {
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+@media screen and (max-width: 782px) {
+	.wpasb-menu-page .wpasb-menu-row {
+		padding: 8px 12px;
+	}
+
+	.wpasb-menu-page .wpasb-menu-child > .wpasb-menu-row {
+		padding-left: 24px;
+	}
+
+	.wpasb-menu-page .wpasb-menu-slug {
+		display: none;
+	}
+}

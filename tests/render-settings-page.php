@@ -51,6 +51,9 @@ function wp_get_attachment_image_url( $id, $size ) { return false; }
 function number_format_i18n( $n ) { return number_format( (float) $n ); }
 function add_action() {}
 function add_options_page() { return 'settings_page_wp-admin-speedboost'; }
+function add_menu_page() { return 'toplevel_page_wp-admin-speedboost'; }
+function add_submenu_page() { return 'toplevel_page_wp-admin-speedboost'; }
+function settings_errors() {}
 function register_setting() {}
 function wp_die( $m ) { throw new RuntimeException( $m ); }
 

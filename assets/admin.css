@@ -582,6 +582,21 @@
 	);
 }
 
+/* Link from a module row to its own screen (Admin Menu Editor). */
+.wpasb-page .wpasb-row-link {
+	flex: none;
+	color: var(--wpasb-ink);
+	font-size: 12px;
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.wpasb-page .wpasb-row-link:hover,
+.wpasb-page .wpasb-row-link:focus {
+	color: var(--wpasb-ink-2);
+}
+
 /* The two modules with settings expand into a full-width panel below. */
 .wpasb-module-row--expandable {
 	grid-template-areas:

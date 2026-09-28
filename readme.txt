@@ -4,15 +4,15 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.4
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Modular wp-admin performance booster. 17 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
+Modular wp-admin performance booster. 18 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
 
 == Description ==
 
-WP Admin Speedboost packages 17 individually toggle-able admin optimisations into a single settings page.
+WP Admin Speedboost packages 18 individually toggle-able admin optimisations into a single settings page.
 
 Every module is off-switchable, nothing is hidden, and no external service is contacted.
 
@@ -34,6 +34,7 @@ Every module is off-switchable, nothing is hidden, and no external service is co
 * Enable Classic Editor - on by default. Restores the TinyMCE editor for posts, pages and widgets.
 * Disable XML-RPC - on by default. Blocks xmlrpc.php, pingbacks and the RSD link.
 * Duplicate Page & Post - on by default. Adds a Duplicate row action and a "Copy to a new draft" editor button.
+* Admin Menu Editor - off by default. Hide wp-admin menu items and block the pages behind them, managed under Speedboost > Admin Menu.
 
 = Duplicate Page & Post =
 
@@ -53,7 +54,7 @@ The module switches itself off and shows a notice if Yoast Duplicate Post, Dupli
 
 = Hide Login URL =
 
-Set the slug under Settings > Admin Speedboost > Login URL. With the module on:
+Set the slug under Speedboost > Modules > Hide Login URL. With the module on:
 
 * `example.com/wp-login.php` returns a 404
 * `example.com/wp-admin/` redirects logged-out visitors to the redirect slug (default `404`)
@@ -104,7 +105,7 @@ The settings page also displays recommended wp-config.php constants and live OPc
 
 1. Upload the plugin zip via Plugins > Add New > Upload
 2. Activate the plugin
-3. Go to Settings > Admin Speedboost
+3. Go to Speedboost in the admin sidebar
 4. Toggle modules on or off, save changes
 
 == Frequently Asked Questions ==
@@ -130,6 +131,12 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.8.0 =
+* Added: Admin Menu Editor module. Hide any item in the wp-admin sidebar, top level or submenu, and the page behind it is blocked too. Opening a hidden page by URL returns a 403 "Page unavailable" screen with a link back to the Dashboard. Hiding a top-level item blocks everything under it, including screens that are not in the menu (Add New, the post editor, categories and tags). Matching "New" entries in the admin bar are removed.
+* Added: The editor lives on its own screen, Speedboost > Admin Menu, with search and collapsible submenus. Hidden items apply to everyone except administrators, unless "Apply to administrators too" is ticked.
+* Added: Lock-out guards. The Speedboost screens, Dashboard and Profile can never be hidden, and `define( 'WPASB_DISABLE_MENU_EDITOR', true );` in wp-config.php switches the module off from outside wp-admin. AJAX, REST, cron and WP-CLI are never affected. This hides menus and pages; it does not remove capabilities.
+* Changed: The plugin now has its own top-level Speedboost menu (Modules and Admin Menu) instead of sitting under Settings. Old Settings > Admin Speedboost links and bookmarks redirect to the new location.
 
 = 1.7.4 =
 * Fixed: The "Bookmark your new login URL" warning sat flush against the "Current login URL" line above it. Same cascade problem as 1.7.3 — the rule was scoped to match the page-wide paragraph reset.

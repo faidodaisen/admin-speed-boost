@@ -224,7 +224,7 @@ class WPASB_Updater {
 						<?php esc_html_e( 'Go to Plugins to update', 'wp-admin-speedboost' ); ?>
 					</a>
 				<?php endif; ?>
-				<a class="wpasb-btn" href="<?php echo esc_url( self::check_url( admin_url( 'options-general.php?page=wp-admin-speedboost' ) ) ); ?>">
+				<a class="wpasb-btn" href="<?php echo esc_url( self::check_url( WPASB_Settings_Page::url() ) ); ?>">
 					<?php echo 'error' === $state ? esc_html__( 'Try again', 'wp-admin-speedboost' ) : esc_html__( 'Check again', 'wp-admin-speedboost' ); ?>
 				</a>
 				<?php if ( null !== $release && ! empty( $release['url'] ) ) : ?>

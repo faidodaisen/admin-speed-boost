@@ -82,6 +82,10 @@ function wpasb_module_labels() {
 			'name'        => __( 'Hide Login URL', 'wp-admin-speedboost' ),
 			'description' => __( 'Move wp-login.php to a custom slug and send logged-out visitors hitting wp-admin or wp-login.php to a 404. Set the slug in the Login URL field below. Bookmark the new URL before you save.', 'wp-admin-speedboost' ),
 		],
+		'admin-menu-editor'     => [
+			'name'        => __( 'Admin Menu Editor', 'wp-admin-speedboost' ),
+			'description' => __( 'Hide items from the wp-admin sidebar and block the pages behind them, for everyone except administrators. Pick the items under Speedboost > Admin Menu. This hides menus and pages, it does not remove user capabilities.', 'wp-admin-speedboost' ),
+		],
 		'custom-login'          => [
 			'name'        => __( 'Custom Login Page', 'wp-admin-speedboost' ),
 			'description' => __( 'Restyle wp-login.php into a split-screen layout: login form on the left with your site logo, a splash image on the right. Choose the splash image below. A bundled image is used until you pick one.', 'wp-admin-speedboost' ),

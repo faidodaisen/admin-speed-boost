@@ -113,7 +113,7 @@ class WPASB_DB_Cleanup {
 		check_admin_referer( 'wpasb_cleanup', 'wpasb_cleanup_nonce' );
 
 		if ( get_transient( self::LOCK_TRANSIENT ) ) {
-			wp_safe_redirect( admin_url( 'options-general.php?page=wp-admin-speedboost' ) );
+			wp_safe_redirect( WPASB_Settings_Page::url() );
 			exit;
 		}
 
@@ -129,7 +129,7 @@ class WPASB_DB_Cleanup {
 			add_query_arg(
 				'wpasb-cleaned',
 				'1',
-				admin_url( 'options-general.php?page=wp-admin-speedboost' )
+				WPASB_Settings_Page::url()
 			)
 		);
 		exit;

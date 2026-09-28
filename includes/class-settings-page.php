@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings page at Settings > Admin Speedboost.
+ * Admin settings page: the top-level Speedboost menu, Modules screen.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -8,6 +8,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WPASB_Settings_Page {
+
+	const SLUG = 'wp-admin-speedboost';
 
 	private $loader;
 	private $hook_suffix = '';
@@ -19,12 +21,45 @@ class WPASB_Settings_Page {
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
 	}
 
+	/**
+	 * Modules screen URL. The plugin lived under Settings until 1.8.0; every
+	 * link and redirect goes through here so the location is set in one place.
+	 */
+	public static function url( $args = [] ) {
+		$url = admin_url( 'admin.php?page=' . self::SLUG );
+
+		return $args ? add_query_arg( $args, $url ) : $url;
+	}
+
 	public function add_menu() {
-		$this->hook_suffix = add_options_page(
+		// Old bookmarks and links point at Settings > Admin Speedboost. Send
+		// them to the new location with their query args (settings-updated,
+		// wpasb-cleaned) intact. Runs before any output.
+		global $pagenow;
+		if ( 'options-general.php' === $pagenow && isset( $_GET['page'] ) && self::SLUG === $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$args = wp_unslash( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			unset( $args['page'] );
+			wp_safe_redirect( self::url( is_array( $args ) ? $args : [] ) );
+			exit;
+		}
+
+		$this->hook_suffix = add_menu_page(
 			__( 'Admin Speedboost', 'wp-admin-speedboost' ),
-			__( 'Admin Speedboost', 'wp-admin-speedboost' ),
+			__( 'Speedboost', 'wp-admin-speedboost' ),
 			'manage_options',
-			'wp-admin-speedboost',
+			self::SLUG,
+			[ $this, 'render' ],
+			'dashicons-performance',
+			81
+		);
+
+		// First submenu entry renames the auto-created duplicate of the parent.
+		add_submenu_page(
+			self::SLUG,
+			__( 'Admin Speedboost', 'wp-admin-speedboost' ),
+			__( 'Modules', 'wp-admin-speedboost' ),
+			'manage_options',
+			self::SLUG,
 			[ $this, 'render' ]
 		);
 	}
@@ -210,7 +245,7 @@ class WPASB_Settings_Page {
 			'noise'       => [
 				'title'       => __( 'Less admin noise', 'wp-admin-speedboost' ),
 				'description' => __( 'Keep dashboards, notices and admin tools focused.', 'wp-admin-speedboost' ),
-				'slugs'       => [ 'dashboard-widgets', 'site-health-prune', 'admin-bar-prune', 'vendor-notices-hide', 'imagick-nag-silence' ],
+				'slugs'       => [ 'dashboard-widgets', 'site-health-prune', 'admin-bar-prune', 'vendor-notices-hide', 'imagick-nag-silence', 'admin-menu-editor' ],
 			],
 			'security'    => [
 				'title'       => __( 'Security & access', 'wp-admin-speedboost' ),
@@ -347,6 +382,10 @@ class WPASB_Settings_Page {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-admin-speedboost' ) );
 		}
+
+		// Settings > * screens get this from options-head.php; a top-level
+		// menu page has to print its own save notices.
+		settings_errors();
 
 		$modules = $this->loader->get_modules();
 		$enabled = $this->loader->get_settings();
@@ -498,6 +537,9 @@ class WPASB_Settings_Page {
 								<div class="wpasb-row-text">
 									<span class="wpasb-row-name"><?php echo esc_html( $module['name'] ); ?></span>
 									<span class="wpasb-row-desc"><?php echo esc_html( $lead ); ?></span>
+									<?php if ( 'admin-menu-editor' === $slug && $is_on ) : ?>
+										<a class="wpasb-row-link" href="<?php echo esc_url( admin_url( 'admin.php?page=wpasb-admin-menu' ) ); ?>"><?php esc_html_e( 'Manage menu', 'wp-admin-speedboost' ); ?> &rarr;</a>
+									<?php endif; ?>
 								</div>
 
 								<span class="wpasb-row-state" data-state="<?php echo $is_on ? 'on' : 'off'; ?>"></span>
