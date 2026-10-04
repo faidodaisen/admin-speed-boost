@@ -336,10 +336,72 @@ class WPASB_Settings_Page {
 					'cleanStarted'   => __( 'Database cleanup started.', 'wp-admin-speedboost' ),
 					'cleanSlow'      => __( 'Still working. Larger databases can take longer.', 'wp-admin-speedboost' ),
 					'cleanDone'      => __( 'Cleanup complete', 'wp-admin-speedboost' ),
+					'cleanDoneMsg'   => __( 'The database was cleaned. Here is what changed.', 'wp-admin-speedboost' ),
 					'cleanFailed'    => __( 'Cleanup could not finish', 'wp-admin-speedboost' ),
 					'cleanUnknown'   => __( 'Cleanup status unknown', 'wp-admin-speedboost' ),
 					'cleanLost'      => __( 'The connection ended before a result arrived. The cleanup may still be running. Reload the page in a minute before trying again.', 'wp-admin-speedboost' ),
 					'cleanGeneric'   => __( 'The cleanup could not be completed. Nothing further was deleted.', 'wp-admin-speedboost' ),
+					'cleanPartial'   => __( 'The cleanup stopped part-way. Steps that already finished are not rolled back.', 'wp-admin-speedboost' ),
+					'scanning'       => __( 'Scanning your database…', 'wp-admin-speedboost' ),
+					'scanSlow'       => __( 'Still scanning. Larger databases can take longer.', 'wp-admin-speedboost' ),
+					'scanFailed'     => __( 'The scan could not finish', 'wp-admin-speedboost' ),
+					'scanGeneric'    => __( 'The scan could not be completed. Nothing was deleted.', 'wp-admin-speedboost' ),
+					/* translators: %s: number of records found */
+					'scanDone'       => __( 'Scan complete. %s found.', 'wp-admin-speedboost' ),
+					'nothingFound'   => __( 'Nothing to clean. Your database is already tidy.', 'wp-admin-speedboost' ),
+					/* translators: %s: number of records */
+					'recordsOne'     => __( '%s record', 'wp-admin-speedboost' ),
+					/* translators: %s: number of records */
+					'recordsMany'    => __( '%s records', 'wp-admin-speedboost' ),
+					/* translators: %s: number of tables */
+					'tablesOne'      => __( '%s table', 'wp-admin-speedboost' ),
+					/* translators: %s: number of tables */
+					'tablesMany'     => __( '%s tables', 'wp-admin-speedboost' ),
+					/* translators: %s: a count of tables, e.g. "3 tables" */
+					'tablesToDo'     => __( '%s to optimise', 'wp-admin-speedboost' ),
+					/* translators: %s: a size such as 3.2 MB */
+					'aboutSize'      => __( 'about %s', 'wp-admin-speedboost' ),
+					'nothingToClean' => __( 'Nothing to clean', 'wp-admin-speedboost' ),
+					'viewRecords'    => __( 'View records', 'wp-admin-speedboost' ),
+					'hideRecords'    => __( 'Hide records', 'wp-admin-speedboost' ),
+					/* translators: %s: number of records not yet shown */
+					'showMoreLeft'   => __( 'Show more (%s left)', 'wp-admin-speedboost' ),
+					'cancel'         => __( 'Cancel', 'wp-admin-speedboost' ),
+					'close'          => __( 'Close', 'wp-admin-speedboost' ),
+					'cleanSomeLeft'  => __( 'Some records could not be removed and are still there. Scan again to see which.', 'wp-admin-speedboost' ),
+					'loadingMore'    => __( 'Loading…', 'wp-admin-speedboost' ),
+					'listFailed'     => __( 'The records could not be loaded.', 'wp-admin-speedboost' ),
+					/* translators: %s: category name, e.g. Post revisions */
+					'includeCat'     => __( 'Include %s', 'wp-admin-speedboost' ),
+					/* translators: %s: number of items */
+					'runOne'         => __( 'Clean up %s item', 'wp-admin-speedboost' ),
+					/* translators: %s: number of items */
+					'runMany'        => __( 'Clean up %s items', 'wp-admin-speedboost' ),
+					'runNone'        => __( 'Clean up', 'wp-admin-speedboost' ),
+					'gatePick'       => __( 'Select at least one category to continue.', 'wp-admin-speedboost' ),
+					'gateConsent'    => __( 'Tick the confirmation to continue.', 'wp-admin-speedboost' ),
+					'stepRevisions'  => __( 'Deleting post revisions', 'wp-admin-speedboost' ),
+					'stepTransients' => __( 'Removing expired transients', 'wp-admin-speedboost' ),
+					'stepOrphanPostmeta'    => __( 'Removing orphaned post meta', 'wp-admin-speedboost' ),
+					'stepOrphanCommentmeta' => __( 'Removing orphaned comment meta', 'wp-admin-speedboost' ),
+					'stepTables'     => __( 'Optimising database tables', 'wp-admin-speedboost' ),
+					'stepFinish'     => __( 'Refreshing caches', 'wp-admin-speedboost' ),
+					/* translators: %s: number of records waiting */
+					'detailQueued'   => __( '%s waiting', 'wp-admin-speedboost' ),
+					/* translators: 1: records done so far, 2: total records */
+					'detailProgress' => __( '%1$s of %2$s', 'wp-admin-speedboost' ),
+					/* translators: %s: number of records deleted */
+					'detailDeleted'  => __( '%s deleted', 'wp-admin-speedboost' ),
+					/* translators: %s: number of tables optimised */
+					'detailOptimised' => __( '%s optimised', 'wp-admin-speedboost' ),
+					/* translators: %s: name of the table being optimised */
+					'detailOptimising' => __( 'Optimising %s', 'wp-admin-speedboost' ),
+					/* translators: 1: records removed, 2: records that could not be removed */
+					'detailPartial'  => __( '%1$s removed, %2$s could not be', 'wp-admin-speedboost' ),
+					'detailDone'     => __( 'Done', 'wp-admin-speedboost' ),
+					'detailFailed'   => __( 'Stopped', 'wp-admin-speedboost' ),
+					/* translators: %s: name of the cleanup step that just finished */
+					'stepFinished'   => __( '%s: done.', 'wp-admin-speedboost' ),
 					'notAvailable'   => __( 'Not available', 'wp-admin-speedboost' ),
 					'copied'         => __( 'Copied', 'wp-admin-speedboost' ),
 					'copyCode'       => __( 'Copy code', 'wp-admin-speedboost' ),
@@ -627,55 +689,67 @@ class WPASB_Settings_Page {
 	 */
 	private function render_cleanup_section() {
 		?>
-		<section class="wpasb-cleanup" id="wpasb-cleanup">
+		<section class="wpasb-cleanup" id="wpasb-cleanup" data-state="idle">
 			<div class="wpasb-cleanup-intro">
 				<div class="wpasb-cleanup-text">
 					<h2 class="wpasb-cleanup-title"><?php esc_html_e( 'Database cleanup', 'wp-admin-speedboost' ); ?></h2>
 					<p class="wpasb-cleanup-desc"><?php esc_html_e( 'Delete revisions and expired transients, remove orphaned metadata, optimise tables.', 'wp-admin-speedboost' ); ?></p>
+					<p class="wpasb-cleanup-hint"><?php esc_html_e( 'Start with a scan. It only reads your database, and nothing is deleted until you have reviewed the results and confirmed.', 'wp-admin-speedboost' ); ?></p>
 					<p class="wpasb-cleanup-warning">
 						<?php echo $this->icon( 'warn' ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 						<span><?php esc_html_e( 'Permanently deletes data. Back up first.', 'wp-admin-speedboost' ); ?></span>
 					</p>
 				</div>
 				<div class="wpasb-cleanup-launch">
-					<button type="button" class="wpasb-btn wpasb-btn--light" id="wpasb-cleanup-review"><?php esc_html_e( 'Review cleanup', 'wp-admin-speedboost' ); ?></button>
+					<?php /* Hidden until the script runs: without JavaScript there is no scan, so no button. */ ?>
+					<button type="button" class="wpasb-btn wpasb-btn--light" id="wpasb-cleanup-scan" hidden><?php esc_html_e( 'Scan database', 'wp-admin-speedboost' ); ?></button>
 				</div>
-			</div>
-
-			<div class="wpasb-cleanup-confirm" id="wpasb-cleanup-confirm" hidden>
-				<h3 class="wpasb-cleanup-confirm-title" id="wpasb-cleanup-confirm-title" tabindex="-1"><?php esc_html_e( 'Run database cleanup?', 'wp-admin-speedboost' ); ?></h3>
-				<ul class="wpasb-cleanup-list">
-					<li><?php esc_html_e( 'Post revisions will be deleted.', 'wp-admin-speedboost' ); ?></li>
-					<li><?php esc_html_e( 'Expired transients will be deleted.', 'wp-admin-speedboost' ); ?></li>
-					<li><?php esc_html_e( 'Orphaned metadata will be removed.', 'wp-admin-speedboost' ); ?></li>
-					<li><?php esc_html_e( 'Eligible tables will be optimised.', 'wp-admin-speedboost' ); ?></li>
-				</ul>
-				<p class="wpasb-cleanup-note"><?php esc_html_e( 'This does not save your module settings. Anything unsaved above stays unsaved.', 'wp-admin-speedboost' ); ?></p>
-				<div class="wpasb-cleanup-actions" id="wpasb-cleanup-actions">
-					<button type="button" class="wpasb-btn wpasb-btn--outline-dark" id="wpasb-cleanup-cancel"><?php esc_html_e( 'Cancel', 'wp-admin-speedboost' ); ?></button>
-					<button type="button" class="wpasb-btn wpasb-btn--light" id="wpasb-cleanup-run"><?php esc_html_e( 'Run cleanup', 'wp-admin-speedboost' ); ?></button>
-				</div>
-				<p class="wpasb-cleanup-running" id="wpasb-cleanup-running" hidden>
-					<span class="wpasb-spinner" aria-hidden="true"></span>
-					<span class="wpasb-cleanup-running-text"><?php esc_html_e( 'Cleaning database…', 'wp-admin-speedboost' ); ?></span>
-				</p>
-
-				<noscript>
-					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wpasb-cleanup-fallback">
-						<?php wp_nonce_field( 'wpasb_cleanup', 'wpasb_cleanup_nonce' ); ?>
-						<input type="hidden" name="action" value="wpasb_cleanup">
-						<button type="submit" class="wpasb-btn wpasb-btn--light"><?php esc_html_e( 'Run cleanup', 'wp-admin-speedboost' ); ?></button>
-					</form>
-				</noscript>
 			</div>
 
 			<noscript>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wpasb-cleanup-fallback">
-					<?php wp_nonce_field( 'wpasb_cleanup', 'wpasb_cleanup_nonce' ); ?>
-					<input type="hidden" name="action" value="wpasb_cleanup">
-					<button type="submit" class="wpasb-btn wpasb-btn--light"><?php esc_html_e( 'Run cleanup now', 'wp-admin-speedboost' ); ?></button>
-				</form>
+				<p class="wpasb-cleanup-nojs"><?php esc_html_e( 'JavaScript is required to scan and review the cleanup before anything is deleted. Turn it on for this page to use database cleanup.', 'wp-admin-speedboost' ); ?></p>
 			</noscript>
+
+			<p class="wpasb-cleanup-scanning" id="wpasb-cleanup-scanning" role="status" hidden>
+				<span class="wpasb-spinner" aria-hidden="true"></span>
+				<span class="wpasb-cleanup-scanning-text"><?php esc_html_e( 'Scanning your database…', 'wp-admin-speedboost' ); ?></span>
+			</p>
+
+			<div class="wpasb-cleanup-review" id="wpasb-cleanup-review" hidden>
+				<h3 class="wpasb-cleanup-review-title" id="wpasb-cleanup-review-title" tabindex="-1"><?php esc_html_e( 'Review what will be cleaned', 'wp-admin-speedboost' ); ?></h3>
+				<p class="wpasb-cleanup-summary" id="wpasb-cleanup-summary"></p>
+
+				<ul class="wpasb-cats" id="wpasb-cleanup-cats"></ul>
+
+				<p class="wpasb-cleanup-note" id="wpasb-cleanup-note" hidden></p>
+
+				<div class="wpasb-cleanup-consent" id="wpasb-cleanup-consent-wrap">
+					<label class="wpasb-check wpasb-check--consent">
+						<input type="checkbox" class="wpasb-check-input" id="wpasb-cleanup-consent">
+						<span class="wpasb-check-box" aria-hidden="true"></span>
+						<span class="wpasb-check-label"><?php esc_html_e( 'I have reviewed the list above, I have a backup, and I understand the selected records will be permanently deleted.', 'wp-admin-speedboost' ); ?></span>
+					</label>
+					<p class="wpasb-cleanup-note"><?php esc_html_e( 'This does not save your module settings. Anything unsaved above stays unsaved.', 'wp-admin-speedboost' ); ?></p>
+				</div>
+
+				<div class="wpasb-cleanup-actions" id="wpasb-cleanup-actions">
+					<button type="button" class="wpasb-btn wpasb-btn--outline-dark" id="wpasb-cleanup-cancel"><?php esc_html_e( 'Cancel', 'wp-admin-speedboost' ); ?></button>
+					<button type="button" class="wpasb-btn wpasb-btn--light" id="wpasb-cleanup-run" disabled aria-describedby="wpasb-cleanup-gate"><?php esc_html_e( 'Clean up', 'wp-admin-speedboost' ); ?></button>
+					<p class="wpasb-cleanup-gate" id="wpasb-cleanup-gate"></p>
+				</div>
+			</div>
+
+			<div class="wpasb-cleanup-progress" id="wpasb-cleanup-progress" hidden>
+				<div class="wpasb-progress-head">
+					<h3 class="wpasb-progress-title" id="wpasb-cleanup-progress-title" tabindex="-1"><?php esc_html_e( 'Cleaning database…', 'wp-admin-speedboost' ); ?></h3>
+					<span class="wpasb-progress-percent" id="wpasb-cleanup-percent" aria-hidden="true">0%</span>
+				</div>
+				<div class="wpasb-progress-track" id="wpasb-cleanup-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="wpasb-cleanup-progress-title">
+					<div class="wpasb-progress-fill" id="wpasb-cleanup-bar-fill"></div>
+				</div>
+				<ul class="wpasb-steps" id="wpasb-cleanup-steps"></ul>
+				<p class="wpasb-progress-status" id="wpasb-cleanup-status"></p>
+			</div>
 
 			<section class="wpasb-cleanup-result" id="wpasb-cleanup-result" aria-labelledby="wpasb-cleanup-result-title" hidden>
 				<div class="wpasb-cleanup-result-heading">
@@ -707,7 +781,7 @@ class WPASB_Settings_Page {
 				</dl>
 				<p class="wpasb-cleanup-result-note"></p>
 				<div class="wpasb-cleanup-result-actions">
-					<button type="button" class="wpasb-btn wpasb-btn--outline-dark" id="wpasb-cleanup-again"><?php esc_html_e( 'Review another cleanup', 'wp-admin-speedboost' ); ?></button>
+					<button type="button" class="wpasb-btn wpasb-btn--outline-dark" id="wpasb-cleanup-again"><?php esc_html_e( 'Scan again', 'wp-admin-speedboost' ); ?></button>
 				</div>
 			</section>
 

@@ -4,11 +4,11 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Modular wp-admin performance booster. 18 toggle-able optimisations plus one-click DB cleanup. Make wp-admin fast.
+Modular wp-admin performance booster. 18 toggle-able optimisations plus a database cleanup that shows you every record before it deletes anything. Make wp-admin fast.
 
 == Description ==
 
@@ -70,14 +70,18 @@ This is a URL obfuscation measure, not authentication. Keep using strong passwor
 
 = Database Cleanup =
 
-One-click cleanup that:
+Cleanup starts with a scan. The scan only reads your database, then lists what it found: a count and size per category, with the actual records behind each count (post title and revision, transient name, orphaned meta key and the post or comment it belonged to) one click away. Nothing is deleted until you have looked at that list, untick any category you want to keep, and tick a confirmation that you have reviewed it and have a backup.
 
-* deletes post revisions through the WordPress API, so postmeta and caches stay consistent
-* deletes expired transients only, leaving live ones in place
-* removes orphaned post and comment meta rows
-* optimises non-InnoDB core tables
+While it runs you get a live checklist and a percentage that move as rows are really removed, one small batch at a time, and a confetti burst when it finishes (not shown if your system asks for reduced motion).
 
-The action is nonce-protected, capability-checked, confirmed by a browser dialog, and uses post-redirect-get so a page refresh cannot run it twice.
+What it cleans:
+
+* post revisions, deleted through the WordPress API so postmeta and caches stay consistent
+* expired transients only, leaving live ones in place
+* orphaned post and comment meta rows
+* non-InnoDB core tables, optimised
+
+What you reviewed is what gets deleted: each category is limited to the records that existed when you scanned, so a revision saved or a transient that expires while you are reading the list is left alone. Every request is nonce-protected and capability-checked, and a site-wide lock stops two tabs running a cleanup at once. Cleanup needs JavaScript, because the review step does.
 
 **This permanently deletes data. Back up your database before running it.**
 
@@ -92,7 +96,7 @@ The settings page also displays recommended wp-config.php constants and live OPc
 * `wpasb_site_health_async_removed` - async Site Health tests to remove
 * `wpasb_rest_user_routes_allowlist` - user routes to allow while logged out
 * `wpasb_hidden_notice_css` - CSS used to hide vendor notices
-* `wpasb_cleanup_batch_size` - revision deletion batch size
+* `wpasb_cleanup_batch_size` - rows deleted per request while cleaning (25 to 5000, default 200)
 * `wpasb_optimize_innodb` - set true to OPTIMIZE InnoDB tables as well
 * `wpasb_logged_in_redirect` - where an already logged-in visitor to the login slug is sent
 * `wpasb_hide_login_signup_enable` - return true to allow wp-signup.php and wp-activate.php
@@ -131,6 +135,12 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.8.1 =
+* Changed: Database cleanup now scans first. The scan lists every record it would delete, grouped by category with counts and sizes, and nothing is deleted until you have reviewed the list and ticked a confirmation. Categories can be unticked individually.
+* Added: A live checklist and percentage while cleaning, driven by rows actually removed, and a confetti burst on completion (skipped when the system prefers reduced motion).
+* Changed: A cleanup only deletes what the scan showed. Records created after the scan are left alone.
+* Removed: The no-JavaScript cleanup form. It could not show the review step, so a blind delete is no longer possible.
 
 = 1.8.0 =
 * Added: Admin Menu Editor module. Hide any item in the wp-admin sidebar, top level or submenu, and the page behind it is blocked too. Opening a hidden page by URL returns a 403 "Page unavailable" screen with a link back to the Dashboard. Hiding a top-level item blocks everything under it, including screens that are not in the menu (Add New, the post editor, categories and tags). Matching "New" entries in the admin bar are removed.

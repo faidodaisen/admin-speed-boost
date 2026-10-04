@@ -327,6 +327,12 @@
 	outline-color: #FFFFFF;
 }
 
+/* Headings are focused by script after each phase so screen readers land on
+   them. They are not controls, so they get no ring. */
+.wpasb-cleanup [tabindex="-1"]:focus-visible {
+	outline: 0;
+}
+
 /* --------------------------------------------------------------------
  * Module toolbar + search
  * ------------------------------------------------------------------ */
@@ -930,7 +936,8 @@
  * Re-assert the inverted colours at matching specificity.
  */
 .wpasb-page .wpasb-cleanup-title,
-.wpasb-page .wpasb-cleanup-confirm-title,
+.wpasb-page .wpasb-cleanup-review-title,
+.wpasb-page .wpasb-progress-title,
 .wpasb-page .wpasb-cleanup-result-title {
 	color: #FFFFFF;
 }
@@ -942,7 +949,7 @@
  */
 .wpasb-page .wpasb-cleanup-desc {
 	margin-top: 10px;
-	margin-bottom: 16px;
+	margin-bottom: 8px;
 	color: var(--wpasb-dark-ink-2);
 	font-size: 13px;
 }
@@ -960,32 +967,6 @@
 	color: #FFFFFF;
 	font-size: 12px;
 	font-weight: 600;
-}
-
-.wpasb-cleanup-confirm {
-	margin-top: 24px;
-	padding: 20px;
-	border: 1px solid var(--wpasb-dark-line);
-	border-radius: var(--wpasb-radius);
-	background: var(--wpasb-dark-2);
-	max-width: 70ch;
-}
-
-.wpasb-cleanup-confirm-title {
-	color: #FFFFFF;
-	font-size: 15px;
-}
-
-.wpasb-cleanup-list {
-	margin: 12px 0 0;
-	padding-left: 18px;
-	color: var(--wpasb-dark-ink-2);
-	font-size: 13px;
-	list-style: disc;
-}
-
-.wpasb-cleanup-list li {
-	margin: 0 0 4px;
 }
 
 .wpasb-page .wpasb-cleanup-note {
@@ -1011,16 +992,6 @@
 	display: none !important;
 }
 
-.wpasb-page .wpasb-cleanup-running {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin-top: 20px;
-	color: #FFFFFF;
-	font-size: 13px;
-	font-weight: 600;
-}
-
 .wpasb-spinner {
 	width: 16px;
 	height: 16px;
@@ -1036,8 +1007,618 @@
 	}
 }
 
-.wpasb-cleanup-fallback {
+/* Review: what the scan found, before anything is deleted */
+.wpasb-cleanup-review,
+.wpasb-cleanup-progress {
+	margin-top: 28px;
+	padding-top: 28px;
+	border-top: 1px solid var(--wpasb-dark-line);
+}
+
+.wpasb-page .wpasb-cleanup-hint {
+	margin-top: 0;
+	color: var(--wpasb-dark-ink-2);
+	font-size: 13px;
+}
+
+.wpasb-page .wpasb-cleanup-nojs {
+	margin-top: 16px;
+	color: var(--wpasb-dark-ink-2);
+	font-size: 13px;
+}
+
+.wpasb-page .wpasb-cleanup-scanning {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 24px;
+	color: #FFFFFF;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.wpasb-cleanup-review-title,
+.wpasb-progress-title {
+	color: #FFFFFF;
+	font-size: 15px;
+}
+
+.wpasb-page .wpasb-cleanup-summary {
+	margin-top: 6px;
+	color: #FFFFFF;
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	font-variant-numeric: tabular-nums;
+}
+
+.wpasb-cats {
+	display: grid;
+	gap: 10px;
+	margin: 20px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wpasb-cat {
+	margin: 0;
+	border: 1px solid var(--wpasb-dark-line);
+	border-radius: var(--wpasb-radius);
+	background: var(--wpasb-dark-2);
+	transition: border-color .15s ease;
+}
+
+.wpasb-cat:not(.is-off):not(.is-empty) {
+	border-color: #5A5A5A;
+}
+
+.wpasb-cat-head {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 16px;
+}
+
+.wpasb-cat-text {
+	display: block;
+	min-width: 0;
+	cursor: pointer;
+}
+
+.wpasb-cat.is-empty .wpasb-cat-text {
+	cursor: default;
+}
+
+.wpasb-cat-name {
+	display: block;
+	color: #FFFFFF;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.wpasb-cat-desc {
+	display: block;
+	margin-top: 2px;
+	max-width: 70ch;
+	color: var(--wpasb-dark-ink-2);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.wpasb-cat.is-off .wpasb-cat-name,
+.wpasb-cat.is-empty .wpasb-cat-name {
+	color: var(--wpasb-dark-ink-2);
+}
+
+.wpasb-cat-meta {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.wpasb-cat-count {
+	color: #FFFFFF;
+	font-size: 14px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.wpasb-cat-count.is-muted,
+.wpasb-cat.is-off .wpasb-cat-count {
+	color: var(--wpasb-dark-ink-2);
+	font-weight: 500;
+}
+
+.wpasb-cat-size {
+	color: var(--wpasb-dark-ink-2);
+	font-size: 12px;
+}
+
+.wpasb-cat-toggle {
+	padding: 6px 4px;
+	border: 0;
+	background: none;
+	color: var(--wpasb-dark-ink-2);
+	font: inherit;
+	font-size: 12px;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.wpasb-cat-toggle:hover {
+	color: #FFFFFF;
+}
+
+.wpasb-cat-body {
+	padding: 0 16px 14px;
+}
+
+.wpasb-recs {
+	scrollbar-color: #5A5A5A transparent;
+	scrollbar-width: thin;
+	max-height: 280px;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	border: 1px solid var(--wpasb-dark-line);
+	border-radius: var(--wpasb-radius);
+	background: var(--wpasb-dark);
+	list-style: none;
+}
+
+.wpasb-rec {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin: 0;
+	padding: 9px 12px;
+	border-top: 1px solid var(--wpasb-dark-line);
+}
+
+.wpasb-rec:first-child {
+	border-top: 0;
+}
+
+.wpasb-rec.is-muted {
+	opacity: .55;
+}
+
+.wpasb-rec-main {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.wpasb-rec-title {
+	overflow: hidden;
+	color: #FFFFFF;
+	font-size: 13px;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wpasb-rec-detail {
+	color: var(--wpasb-dark-ink-2);
+	font-size: 12px;
+}
+
+.wpasb-rec-side {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 10px;
+	font-variant-numeric: tabular-nums;
+}
+
+.wpasb-rec-extra {
+	color: var(--wpasb-dark-ink-2);
+	font-size: 12px;
+}
+
+.wpasb-rec-tag {
+	padding: 1px 8px;
+	border: 1px solid #5A5A5A;
+	border-radius: 999px;
+	color: #FFFFFF;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.wpasb-cat-more {
+	margin-top: 10px;
+	color: var(--wpasb-dark-ink-2);
+}
+
+.wpasb-cat-more:hover {
+	color: #FFFFFF;
+}
+
+/* Consent */
+.wpasb-cleanup-consent {
 	margin-top: 20px;
+	padding: 16px;
+	border: 1px solid var(--wpasb-dark-line);
+	border-radius: var(--wpasb-radius);
+	background: var(--wpasb-dark-2);
+	max-width: 70ch;
+}
+
+.wpasb-cleanup-consent .wpasb-cleanup-note {
+	margin-top: 10px;
+}
+
+.wpasb-page .wpasb-cleanup-gate {
+	flex: 1 1 200px;
+	margin: 0;
+	color: var(--wpasb-dark-ink-2);
+	font-size: 12px;
+}
+
+/* Custom checkbox. The native input stays on top, invisible, so keyboard,
+   label clicks and assistive tech all keep working. */
+.wpasb-check {
+	position: relative;
+	display: inline-flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.wpasb-check--consent {
+	display: flex;
+	cursor: pointer;
+}
+
+.wpasb-page input.wpasb-check-input[type="checkbox"],
+.wpasb-page input.wpasb-check-input[type="checkbox"]:disabled {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 1;
+	width: 20px;
+	height: 20px;
+	min-width: 0;
+	margin: 0;
+	opacity: 0; /* WP core dims a disabled checkbox to .7, which would show it through the custom box */
+	cursor: pointer;
+}
+
+.wpasb-page input.wpasb-check-input[type="checkbox"]:disabled {
+	cursor: default;
+}
+
+.wpasb-check-box {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border: 1.5px solid #7A7A7A;
+	border-radius: 4px;
+	background: transparent;
+	transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.wpasb-check-box::after {
+	content: "";
+	width: 10px;
+	height: 5px;
+	margin-top: -2px;
+	border-left: 2px solid var(--wpasb-ink);
+	border-bottom: 2px solid var(--wpasb-ink);
+	transform: rotate(-45deg) scale(0);
+	transition: transform .18s cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.wpasb-check-input:checked + .wpasb-check-box {
+	border-color: #FFFFFF;
+	background: #FFFFFF;
+}
+
+.wpasb-check-input:checked + .wpasb-check-box::after {
+	transform: rotate(-45deg) scale(1);
+}
+
+.wpasb-check-input:not([disabled]):hover + .wpasb-check-box {
+	border-color: #FFFFFF;
+}
+
+.wpasb-check-input[disabled] + .wpasb-check-box {
+	opacity: .35;
+}
+
+.wpasb-check-input:focus-visible + .wpasb-check-box {
+	outline: 2px solid #FFFFFF;
+	outline-offset: 2px;
+}
+
+.wpasb-check-label {
+	color: #FFFFFF;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* Progress */
+.wpasb-progress-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.wpasb-progress-percent {
+	display: inline-block;
+	color: #FFFFFF;
+	font-size: 40px;
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+}
+
+.wpasb-cleanup-progress.is-complete .wpasb-progress-percent {
+	animation: wpasb-pop .5s cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.wpasb-progress-track {
+	position: relative;
+	height: 8px;
+	margin-top: 14px;
+	overflow: hidden;
+	border-radius: 999px;
+	background: var(--wpasb-dark-line);
+}
+
+.wpasb-progress-fill {
+	position: relative;
+	width: 0;
+	height: 100%;
+	overflow: hidden;
+	border-radius: 999px;
+	background: #FFFFFF;
+	transition: width .4s ease;
+}
+
+/* A slow sheen so the bar reads as alive while the server works. */
+.wpasb-progress-fill::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent, rgba(0, 0, 0, .18), transparent);
+	transform: translateX(-100%);
+	animation: wpasb-sheen 1.4s ease-in-out infinite;
+}
+
+.wpasb-cleanup-progress.is-complete .wpasb-progress-fill::after {
+	animation: none;
+	opacity: 0;
+}
+
+.wpasb-steps {
+	display: grid;
+	gap: 4px;
+	margin: 24px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wpasb-step {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	margin: 0;
+	padding: 10px 0;
+	animation: wpasb-step-in .45s ease both;
+	animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.wpasb-step-icon {
+	position: relative;
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin-top: 1px;
+	border: 1.5px solid #4A4A4A;
+	border-radius: 50%;
+	color: var(--wpasb-ink);
+	transition: background-color .25s ease, border-color .25s ease;
+}
+
+.wpasb-step-icon svg {
+	position: relative;
+	z-index: 1;
+}
+
+.wpasb-step-icon .wpasb-tick,
+.wpasb-step-icon .wpasb-bang,
+.wpasb-step-icon .wpasb-cross {
+	display: none;
+}
+
+.wpasb-step-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.wpasb-step-label {
+	color: #7A7A7A;
+	font-size: 14px;
+	font-weight: 600;
+	transition: color .25s ease;
+}
+
+.wpasb-step-detail {
+	color: #7A7A7A;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	transition: color .25s ease;
+}
+
+.wpasb-step-meter {
+	display: block;
+	height: 2px;
+	margin-top: 8px;
+	max-width: 320px;
+	overflow: hidden;
+	border-radius: 2px;
+	background: var(--wpasb-dark-line);
+	opacity: 0;
+	transition: opacity .25s ease;
+}
+
+.wpasb-step-meter-fill {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: #FFFFFF;
+	transition: width .35s ease;
+}
+
+/* active: ring spins, text lights up */
+.wpasb-step.is-active .wpasb-step-label {
+	color: #FFFFFF;
+}
+
+.wpasb-step.is-active .wpasb-step-detail {
+	color: var(--wpasb-dark-ink-2);
+}
+
+.wpasb-step.is-active .wpasb-step-meter {
+	opacity: 1;
+}
+
+.wpasb-step.is-active .wpasb-step-icon {
+	border-color: rgba(255, 255, 255, .25);
+}
+
+.wpasb-step.is-active .wpasb-step-icon::before {
+	content: "";
+	position: absolute;
+	inset: -1.5px;
+	border: 1.5px solid transparent;
+	border-top-color: #FFFFFF;
+	border-radius: 50%;
+	animation: wpasb-spin .7s linear infinite;
+}
+
+/* done: filled disc, tick draws itself */
+.wpasb-step.is-done .wpasb-step-icon {
+	border-color: #FFFFFF;
+	background: #FFFFFF;
+	animation: wpasb-pop .45s cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.wpasb-step.is-done .wpasb-tick {
+	display: inline;
+	stroke-dasharray: 1;
+	stroke-dashoffset: 1;
+	animation: wpasb-draw .35s .1s ease forwards;
+}
+
+.wpasb-step.is-done .wpasb-step-label {
+	color: #FFFFFF;
+}
+
+.wpasb-step.is-done .wpasb-step-detail {
+	color: var(--wpasb-dark-ink-2);
+}
+
+.wpasb-step.is-done .wpasb-step-meter {
+	opacity: 0;
+}
+
+/* warn / failed: outlined, never the success disc */
+.wpasb-step.is-warn .wpasb-step-icon,
+.wpasb-step.is-failed .wpasb-step-icon {
+	border-color: #FFFFFF;
+	color: #FFFFFF;
+}
+
+.wpasb-step.is-warn .wpasb-bang {
+	display: inline;
+}
+
+.wpasb-step.is-failed .wpasb-cross {
+	display: inline;
+}
+
+.wpasb-step.is-warn .wpasb-step-label,
+.wpasb-step.is-failed .wpasb-step-label {
+	color: #FFFFFF;
+}
+
+.wpasb-step.is-warn .wpasb-step-detail,
+.wpasb-step.is-failed .wpasb-step-detail {
+	color: var(--wpasb-dark-ink-2);
+}
+
+.wpasb-page .wpasb-progress-status {
+	min-height: 18px;
+	margin-top: 12px;
+	color: var(--wpasb-dark-ink-2);
+	font-size: 12px;
+}
+
+/* Confetti: the one place colour is allowed on this page. Lives on <body>,
+   outside .wpasb-page, so it needs its own layer above the admin bar. */
+.wpasb-confetti {
+	position: fixed;
+	inset: 0;
+	z-index: 100001;
+	width: 100vw;
+	height: 100vh;
+	pointer-events: none;
+}
+
+@keyframes wpasb-step-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes wpasb-draw {
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes wpasb-pop {
+	0% {
+		transform: scale(.7);
+	}
+
+	60% {
+		transform: scale(1.12);
+	}
+
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes wpasb-sheen {
+	to {
+		transform: translateX(100%);
+	}
 }
 
 /* Cleanup result */
@@ -1327,6 +1908,27 @@
 		grid-template-columns: 1fr;
 	}
 
+	.wpasb-cat-head {
+		grid-template-columns: auto minmax(0, 1fr);
+		row-gap: 10px;
+	}
+
+	.wpasb-cat-meta {
+		grid-column: 2;
+		align-items: flex-start;
+		text-align: left;
+	}
+
+	.wpasb-cat-toggle {
+		grid-column: 2;
+		justify-self: start;
+		padding-left: 0;
+	}
+
+	.wpasb-progress-percent {
+		font-size: 32px;
+	}
+
 	.wpasb-savebar-actions,
 	.wpasb-cleanup-actions {
 		width: 100%;
@@ -1345,5 +1947,18 @@
 		animation-duration: .001ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: .001ms !important;
+	}
+
+	.wpasb-step,
+	.wpasb-step.is-done .wpasb-tick {
+		animation: none;
+	}
+
+	.wpasb-step.is-done .wpasb-tick {
+		stroke-dashoffset: 0;
+	}
+
+	.wpasb-progress-fill::after {
+		display: none;
 	}
 }

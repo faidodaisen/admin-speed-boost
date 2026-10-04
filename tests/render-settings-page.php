@@ -141,8 +141,11 @@ foreach ( [
 foreach ( [
 	'wpasb-settings-form', 'wpasb-summary-count', 'wpasb-summary-state', 'wpasb-search',
 	'wpasb-search-clear', 'wpasb-search-empty', 'wpasb-savebar', 'wpasb-discard', 'wpasb-save',
-	'wpasb-cleanup', 'wpasb-cleanup-review', 'wpasb-cleanup-confirm', 'wpasb-cleanup-confirm-title',
-	'wpasb-cleanup-actions', 'wpasb-cleanup-cancel', 'wpasb-cleanup-run', 'wpasb-cleanup-running',
+	'wpasb-cleanup', 'wpasb-cleanup-scan', 'wpasb-cleanup-scanning', 'wpasb-cleanup-review',
+	'wpasb-cleanup-review-title', 'wpasb-cleanup-summary', 'wpasb-cleanup-cats', 'wpasb-cleanup-consent',
+	'wpasb-cleanup-actions', 'wpasb-cleanup-cancel', 'wpasb-cleanup-run', 'wpasb-cleanup-gate',
+	'wpasb-cleanup-progress', 'wpasb-cleanup-progress-title', 'wpasb-cleanup-percent', 'wpasb-cleanup-bar',
+	'wpasb-cleanup-bar-fill', 'wpasb-cleanup-steps', 'wpasb-cleanup-status',
 	'wpasb-cleanup-result', 'wpasb-cleanup-result-title', 'wpasb-cleanup-again',
 	'wpasb-cleanup-announcement', 'wpasb-panel-hide-login', 'wpasb-panel-custom-login',
 	'wpasb-login-slug', 'wpasb-login-redirect', 'wpasb-login-preview', 'wpasb-splash-id',
@@ -184,10 +187,23 @@ $form_end   = strpos( $html, '</form>', $form_start );
 $cleanup_at = strpos( $html, 'id="wpasb-cleanup"' );
 expect( $cleanup_at > $form_end, 'cleanup section is inside the settings form', $failures );
 
-// No-JS fallback must survive.
-expect( substr_count( $html, '<noscript>' ) >= 1, 'no no-JS cleanup fallback', $failures );
-expect( false !== strpos( $html, 'name="action" value="wpasb_cleanup"' ), 'fallback posts no cleanup action', $failures );
-expect( false !== strpos( $html, 'wpasb_cleanup_nonce' ), 'fallback has no nonce', $failures );
+// Deleting is only reachable through scan -> review -> consent, which needs
+// JavaScript. There must be no blind no-JS delete button left behind, only a
+// notice that says why the section needs scripts.
+expect( substr_count( $html, '<noscript>' ) >= 1, 'no no-JS notice for the cleanup', $failures );
+expect( false === strpos( $html, 'name="action" value="wpasb_cleanup"' ), 'a no-JS delete form is still rendered', $failures );
+expect( false === strpos( $html, 'wpasb_cleanup_nonce' ), 'a no-JS delete nonce is still rendered', $failures );
+
+// The scan button ships hidden (shown by the script), and every panel after it
+// starts hidden: nothing destructive is visible or focusable on first paint.
+foreach ( [ 'wpasb-cleanup-scan', 'wpasb-cleanup-review', 'wpasb-cleanup-progress', 'wpasb-cleanup-result', 'wpasb-cleanup-scanning' ] as $id ) {
+	expect( 1 === preg_match( '/id="' . $id . '"[^>]*\bhidden\b/', $html ), "#$id is not hidden on first paint", $failures );
+}
+
+// Consent gates the delete button: unticked and disabled on first paint.
+expect( 1 === preg_match( '/<input type="checkbox"[^>]*id="wpasb-cleanup-consent"(?![^>]*checked)/', $html ), 'the consent checkbox starts ticked or is missing', $failures );
+expect( 1 === preg_match( '/id="wpasb-cleanup-run"[^>]*\bdisabled\b/', $html ), 'the Clean up button starts enabled', $failures );
+expect( 1 === preg_match( '/id="wpasb-cleanup-bar"[^>]*role="progressbar"[^>]*aria-valuenow="0"/', $html ), 'the progress bar has no progressbar role', $failures );
 
 // Hidden panels must start hidden when their module is off.
 expect( preg_match( '/id="wpasb-panel-hide-login"[^>]*>/', $html, $m ) === 1, 'hide-login panel missing', $failures );
@@ -232,10 +248,9 @@ if ( in_array( '--dump', $argv, true ) ) {
 	// the same shape or the script aborts before binding anything.
 	$boot = 'var wpasbData=' . json_encode(
 		[
-			'ajaxUrl'       => 'about:blank',
-			'cleanupNonce'  => 'preview',
-			'cleanupAction' => 'wpasb_cleanup',
-			'i18n'          => [],
+			'ajaxUrl' => 'about:blank',
+			'nonce'   => 'preview',
+			'i18n'    => [],
 		]
 	) . ';var wpasbLogin={frameTitle:"",frameButton:"",defaultUrl:""};';
 	$out  = "<!doctype html><html><head><meta charset=\"utf-8\">"
