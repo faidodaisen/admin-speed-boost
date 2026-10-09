@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.1
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,7 +34,7 @@ Every module is off-switchable, nothing is hidden, and no external service is co
 * Enable Classic Editor - on by default. Restores the TinyMCE editor for posts, pages and widgets.
 * Disable XML-RPC - on by default. Blocks xmlrpc.php, pingbacks and the RSD link.
 * Duplicate Page & Post - on by default. Adds a Duplicate row action and a "Copy to a new draft" editor button.
-* Admin Menu Editor - off by default. Hide wp-admin menu items and block the pages behind them, managed under Speedboost > Admin Menu.
+* Admin Menu Editor - off by default. Hide, rename and reorder wp-admin menu items (hidden items have their pages blocked too), managed under Speedboost > Admin Menu.
 
 = Duplicate Page & Post =
 
@@ -135,6 +135,13 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.9.0 =
+* Added: Rename admin menu items. On Speedboost > Admin Menu, click any label (top level or submenu), type a new name and save. Clear it to go back to the original. Count bubbles such as pending comments stay next to the new name.
+* Added: Reorder the admin menu by dragging the handle beside each item (mouse or touch), or with the up and down arrow keys. Submenu items move within their own menu; the first submenu item stays first because WordPress uses it as the parent's link. A Reset order button restores the original order.
+* Note: New labels and order apply to every user, administrators included. "Apply to administrators too" still only controls hiding.
+* Fixed: Saving the Admin Menu screen now refuses a form the server received only part of (PHP max_input_vars), instead of silently un-hiding items. The form also posts far fewer fields.
+* Changed: Labels and order set for a plugin that is currently inactive are kept when the screen is saved.
 
 = 1.8.1 =
 * Changed: Database cleanup now scans first. The scan lists every record it would delete, grouped by category with counts and sizes, and nothing is deleted until you have reviewed the list and ticked a confirmation. Categories can be unticked individually.

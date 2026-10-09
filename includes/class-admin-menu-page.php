@@ -58,7 +58,7 @@ class WPASB_Admin_Menu_Page {
 			[
 				'type'              => 'array',
 				'sanitize_callback' => [ $this, 'sanitize' ],
-				'default'           => [ 'menu' => [], 'submenu' => [], 'include_admin' => false ],
+				'default'           => [ 'menu' => [], 'submenu' => [], 'include_admin' => false, 'labels' => [], 'order' => [] ],
 				'show_in_rest'      => false,
 			]
 		);
@@ -87,6 +87,19 @@ class WPASB_Admin_Menu_Page {
 			return WPASB_Admin_Menu::clean_settings( $input );
 		}
 
+		// The form ends with a marker field. PHP drops every field past
+		// max_input_vars without an error, so a missing marker means the
+		// post was cut short: saving it would un-hide items and drop labels.
+		if ( ! is_array( $input ) || empty( $input['complete'] ) ) {
+			add_settings_error(
+				WPASB_Admin_Menu::OPT,
+				'wpasb_menu_truncated',
+				__( 'Nothing was saved: the server received only part of the form (PHP max_input_vars is too low for this menu). Reload the page and try again, or raise max_input_vars.', 'wp-admin-speedboost' ),
+				'error'
+			);
+			return $current;
+		}
+
 		return self::sanitize_input( $input, $current, get_option( WPASB_Admin_Menu::OPT_SNAPSHOT, [] ) );
 	}
 
@@ -113,6 +126,22 @@ class WPASB_Admin_Menu_Page {
 		foreach ( $current['submenu'] as $parent => $children ) {
 			foreach ( $children as $child ) {
 				$allowed_sub[ self::encode_child( $parent, $child ) ] = true;
+			}
+		}
+
+		// Renamed or reordered entries that are no longer registered.
+		foreach ( $current['labels']['menu'] as $slug => $label ) {
+			$allowed_top[ $slug ] = true;
+		}
+		foreach ( $current['order']['menu'] as $slug ) {
+			$allowed_top[ $slug ] = true;
+		}
+		foreach ( [ $current['labels']['submenu'], $current['order']['submenu'] ] as $group ) {
+			foreach ( $group as $parent => $children ) {
+				foreach ( $children as $key => $value ) {
+					$child = is_string( $key ) ? $key : $value;
+					$allowed_sub[ self::encode_child( $parent, $child ) ] = true;
+				}
 			}
 		}
 
@@ -148,8 +177,155 @@ class WPASB_Admin_Menu_Page {
 			}
 		}
 
-		// clean_settings() also drops protected slugs.
+		list( $labels, $order_top, $order_sub, $edited ) = self::read_items( $input, $allowed_top, $allowed_sub );
+
+		if ( null === $labels ) {
+			// No items posted (an older form): keep the stored labels.
+			$clean['labels'] = $current['labels'];
+		} else {
+			// Labels of entries that had no editable field on this screen
+			// (plugin switched off, menu this admin cannot see, entry no
+			// longer registered) are kept, not dropped.
+			foreach ( $current['labels']['menu'] as $slug => $label ) {
+				if ( ! isset( $edited[ 'm:' . $slug ] ) ) {
+					$labels['menu'][ $slug ] = $label;
+				}
+			}
+			foreach ( $current['labels']['submenu'] as $parent => $children ) {
+				foreach ( $children as $child => $label ) {
+					if ( ! isset( $edited[ 's:' . self::encode_child( $parent, $child ) ] ) ) {
+						$labels['submenu'][ $parent ][ $child ] = $label;
+					}
+				}
+			}
+			$clean['labels'] = $labels;
+		}
+
+		$mode = isset( $input['order_mode'] ) && is_string( $input['order_mode'] ) ? $input['order_mode'] : 'keep';
+		if ( 'save' === $mode && null !== $labels ) {
+			// Entries missing from this screen keep their saved place.
+			$order = [ 'menu' => self::merge_order( $order_top, $current['order']['menu'] ), 'submenu' => [] ];
+			foreach ( $current['order']['submenu'] as $parent => $children ) {
+				$order['submenu'][ $parent ] = isset( $order_sub[ $parent ] ) ? self::merge_order( $order_sub[ $parent ], $children ) : $children;
+			}
+			foreach ( $order_sub as $parent => $children ) {
+				if ( ! isset( $order['submenu'][ $parent ] ) ) {
+					$order['submenu'][ $parent ] = $children;
+				}
+			}
+			$clean['order'] = $order;
+		} elseif ( 'reset' === $mode ) {
+			$clean['order'] = [];
+		} else {
+			$clean['order'] = $current['order'];
+		}
+
+		// clean_settings() also drops protected slugs from the hidden lists.
 		return WPASB_Admin_Menu::clean_settings( $clean );
+	}
+
+	/**
+	 * Saved order with the slugs that were not on screen put back after
+	 * the slug they followed before.
+	 *
+	 * @param string[] $new Order as posted.
+	 * @param string[] $old Stored order.
+	 */
+	public static function merge_order( array $new, array $old ) {
+		$out     = array_values( $new );
+		$present = array_flip( $out );
+		$prev    = null;
+
+		foreach ( $old as $slug ) {
+			if ( isset( $present[ $slug ] ) ) {
+				$prev = $slug;
+				continue;
+			}
+			$pos = null === $prev ? 0 : array_search( $prev, $out, true ) + 1;
+			array_splice( $out, $pos, 0, [ $slug ] );
+			$present[ $slug ] = true;
+			$prev             = $slug;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Rename/order fields, in on-screen order. With JavaScript they arrive
+	 * packed in one `layout` JSON field (keeps the field count, and the
+	 * max_input_vars headroom, as it was); without it as items[n] fields.
+	 * Each item: { k: row key, d: original label, l: label as typed }; `l`
+	 * is absent when the row has no editable label.
+	 *
+	 * @return array{0:array|null, 1:string[], 2:array, 3:array} labels (null
+	 *         when no items were posted), top-level order, submenu order,
+	 *         row keys whose label field was posted.
+	 */
+	private static function read_items( array $input, array $allowed_top, array $allowed_sub ) {
+		$items = null;
+		if ( isset( $input['layout'] ) && is_string( $input['layout'] ) && '' !== $input['layout'] ) {
+			$decoded = json_decode( $input['layout'], true );
+			if ( is_array( $decoded ) ) {
+				$items = $decoded;
+			}
+		}
+		if ( null === $items && isset( $input['items'] ) && is_array( $input['items'] ) ) {
+			$items = $input['items'];
+		}
+		if ( null === $items ) {
+			return [ null, [], [], [] ];
+		}
+		$items = array_slice( $items, 0, 5000 );
+
+		$labels    = [ 'menu' => [], 'submenu' => [] ];
+		$order_top = [];
+		$order_sub = [];
+		$edited    = [];
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || ! isset( $item['k'] ) || ! is_string( $item['k'] ) ) {
+				continue;
+			}
+			$has_field = array_key_exists( 'l', $item );
+			$label     = $has_field ? WPASB_Admin_Menu::clean_text( $item['l'] ) : '';
+			$default   = isset( $item['d'] ) ? WPASB_Admin_Menu::clean_text( $item['d'] ) : '';
+			// Typed back to the original, or cleared: no custom label.
+			$custom = '' !== $label && $label !== $default;
+
+			if ( 0 === strpos( $item['k'], 'm:' ) ) {
+				$slug = WPASB_Admin_Menu::normalize( substr( $item['k'], 2 ) );
+				if ( '' === $slug || ! isset( $allowed_top[ $slug ] ) ) {
+					continue;
+				}
+				$order_top[] = $slug;
+				if ( $has_field ) {
+					$edited[ 'm:' . $slug ] = true;
+				}
+				if ( $custom ) {
+					$labels['menu'][ $slug ] = $label;
+				}
+			} elseif ( 0 === strpos( $item['k'], 's:' ) ) {
+				$pair = substr( $item['k'], 2 );
+				if ( false === strpos( $pair, self::SEP ) ) {
+					continue;
+				}
+				list( $parent, $child ) = explode( self::SEP, $pair, 2 );
+				$parent = WPASB_Admin_Menu::normalize( $parent );
+				$child  = WPASB_Admin_Menu::normalize( $child );
+				if ( ! isset( $allowed_sub[ self::encode_child( $parent, $child ) ] ) ) {
+					continue;
+				}
+				$order_sub[ $parent ][] = $child;
+				if ( $has_field ) {
+					$edited[ 's:' . self::encode_child( $parent, $child ) ] = true;
+				}
+				if ( $custom ) {
+					$labels['submenu'][ $parent ][ $child ] = $label;
+				}
+			}
+		}
+
+		return [ $labels, $order_top, $order_sub, $edited ];
 	}
 
 	public function enqueue_assets( $hook ) {
@@ -175,6 +351,9 @@ class WPASB_Admin_Menu_Page {
 					'saving'        => __( 'Saving…', 'wp-admin-speedboost' ),
 					'showSubmenu'   => __( 'Show submenu', 'wp-admin-speedboost' ),
 					'hideSubmenu'   => __( 'Hide submenu', 'wp-admin-speedboost' ),
+					/* translators: 1: menu item label, 2: new position, 3: number of positions */
+					'moved'         => __( '%1$s moved to position %2$d of %3$d.', 'wp-admin-speedboost' ),
+					'orderReset'    => __( 'Original order restored. Save to keep it.', 'wp-admin-speedboost' ),
 				],
 			]
 		);
@@ -228,9 +407,12 @@ class WPASB_Admin_Menu_Page {
 				$children[] = [
 					'slug'      => $cslug,
 					'label'     => WPASB_Admin_Menu::clean_label( isset( $child[0] ) ? $child[0] : '', $cslug ),
+					'custom'    => isset( $settings['labels']['submenu'][ $slug ][ $cslug ] ) ? $settings['labels']['submenu'][ $slug ][ $cslug ] : '',
 					'hidden'    => isset( $hidden_child[ $cslug ] ),
 					'protected' => WPASB_Admin_Menu::is_protected_slug( $cslug ),
 					'missing'   => false,
+					// The first child is the parent's own link; it stays first.
+					'pinned'    => ! $children,
 				];
 			}
 
@@ -239,9 +421,11 @@ class WPASB_Admin_Menu_Page {
 					$children[] = [
 						'slug'      => $cslug,
 						'label'     => $cslug,
+						'custom'    => '',
 						'hidden'    => true,
 						'protected' => false,
 						'missing'   => true,
+						'pinned'    => false,
 					];
 				}
 			}
@@ -249,6 +433,7 @@ class WPASB_Admin_Menu_Page {
 			$rows[] = [
 				'slug'      => $slug,
 				'label'     => WPASB_Admin_Menu::clean_label( isset( $item[0] ) ? $item[0] : '', $slug ),
+				'custom'    => isset( $settings['labels']['menu'][ $slug ] ) ? $settings['labels']['menu'][ $slug ] : '',
 				'icon'      => isset( $item[6] ) ? (string) $item[6] : '',
 				'hidden'    => isset( $hidden_top[ $slug ] ),
 				'protected' => WPASB_Admin_Menu::is_protected_slug( $slug ),
@@ -262,6 +447,7 @@ class WPASB_Admin_Menu_Page {
 				$rows[] = [
 					'slug'      => $slug,
 					'label'     => $slug,
+					'custom'    => '',
 					'icon'      => '',
 					'hidden'    => true,
 					'protected' => false,
@@ -282,14 +468,17 @@ class WPASB_Admin_Menu_Page {
 				$kids[] = [
 					'slug'      => $cslug,
 					'label'     => $cslug,
+					'custom'    => '',
 					'hidden'    => true,
 					'protected' => false,
 					'missing'   => true,
+					'pinned'    => false,
 				];
 			}
 			$rows[] = [
 				'slug'      => $parent,
 				'label'     => $parent,
+				'custom'    => '',
 				'icon'      => '',
 				'hidden'    => false,
 				'protected' => false,
@@ -299,7 +488,42 @@ class WPASB_Admin_Menu_Page {
 			];
 		}
 
-		return $rows;
+		return self::sort_rows( $rows, $settings );
+	}
+
+	/**
+	 * Rows in the saved order, the same way the sidebar is sorted. Each row
+	 * keeps its unsorted position in `natural` for "Reset order".
+	 */
+	public static function sort_rows( array $rows, array $settings ) {
+		foreach ( $rows as $i => $row ) {
+			$rows[ $i ]['natural'] = $i;
+
+			$kids = $row['children'];
+			foreach ( $kids as $n => $kid ) {
+				$kids[ $n ]['natural'] = $n;
+			}
+			$saved = isset( $settings['order']['submenu'][ $row['slug'] ] ) ? $settings['order']['submenu'][ $row['slug'] ] : [];
+			if ( $saved && count( $kids ) > 1 && ! empty( $kids[0]['pinned'] ) ) {
+				$first = array_shift( $kids );
+				$tail  = [];
+				foreach ( WPASB_Admin_Menu::order_indexes( array_column( $kids, 'slug' ), $saved ) as $n ) {
+					$tail[] = $kids[ $n ];
+				}
+				$kids = array_merge( [ $first ], $tail );
+			}
+			$rows[ $i ]['children'] = $kids;
+		}
+
+		if ( empty( $settings['order']['menu'] ) ) {
+			return $rows;
+		}
+
+		$out = [];
+		foreach ( WPASB_Admin_Menu::order_indexes( array_column( $rows, 'slug' ), $settings['order']['menu'] ) as $i ) {
+			$out[] = $rows[ $i ];
+		}
+		return $out;
 	}
 
 	/**
@@ -380,6 +604,77 @@ class WPASB_Admin_Menu_Page {
 		<?php
 	}
 
+	/**
+	 * Drag handle. Also moves the row with the arrow keys.
+	 */
+	private function handle( $label, $locked = false ) {
+		if ( $locked ) {
+			echo '<span class="wpasb-menu-handle wpasb-menu-handle--locked" aria-hidden="true"></span>';
+			return;
+		}
+		?>
+		<button type="button" class="wpasb-menu-handle" aria-describedby="wpasb-menu-drag-help">
+			<svg class="wpasb-icon" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="6" cy="3.5" r="1.25"/><circle cx="10" cy="3.5" r="1.25"/><circle cx="6" cy="8" r="1.25"/><circle cx="10" cy="8" r="1.25"/><circle cx="6" cy="12.5" r="1.25"/><circle cx="10" cy="12.5" r="1.25"/></svg>
+			<span class="screen-reader-text">
+				<?php
+				printf(
+					/* translators: %s: menu item label */
+					esc_html__( 'Move %s', 'wp-admin-speedboost' ),
+					esc_html( $label )
+				);
+				?>
+			</span>
+		</button>
+		<?php
+	}
+
+	/**
+	 * Editable label. Empty means "use the original", shown as placeholder.
+	 *
+	 * @param int $n Field index; fields post in on-screen order.
+	 */
+	private function label_field( $n, $key, $label, $custom, $editable ) {
+		$name = WPASB_Admin_Menu::OPT . '[items][' . (int) $n . ']';
+		$id   = 'wpasb-ml-' . substr( md5( $key ), 0, 12 );
+		?>
+		<input type="hidden" class="wpasb-menu-item-field" data-key="<?php echo esc_attr( $key ); ?>" name="<?php echo esc_attr( $name ); ?>[k]" value="<?php echo esc_attr( $key ); ?>">
+		<?php if ( ! $editable ) : ?>
+			<span class="wpasb-menu-label"><?php echo esc_html( $label ); ?></span>
+			<?php
+			return;
+		endif;
+		?>
+		<input type="hidden" class="wpasb-menu-item-field" name="<?php echo esc_attr( $name ); ?>[d]" value="<?php echo esc_attr( $label ); ?>">
+		<label class="screen-reader-text" for="<?php echo esc_attr( $id ); ?>">
+			<?php
+			printf(
+				/* translators: %s: original menu item label */
+				esc_html__( 'Label for %s', 'wp-admin-speedboost' ),
+				esc_html( $label )
+			);
+			?>
+		</label>
+		<input type="text" id="<?php echo esc_attr( $id ); ?>" class="wpasb-menu-label wpasb-menu-label-input"
+			name="<?php echo esc_attr( $name ); ?>[l]"
+			value="<?php echo esc_attr( $custom ); ?>"
+			placeholder="<?php echo esc_attr( $label ); ?>"
+			data-initial="<?php echo esc_attr( $custom ); ?>"
+			data-original="<?php echo esc_attr( $label ); ?>"
+			maxlength="<?php echo (int) WPASB_Admin_Menu::LABEL_MAX; ?>"
+			size="<?php echo (int) max( 6, min( 40, ( function_exists( 'mb_strlen' ) ? mb_strlen( '' !== $custom ? $custom : $label ) : strlen( '' !== $custom ? $custom : $label ) ) + 2 ) ); ?>"
+			autocomplete="off" spellcheck="false">
+		<span class="wpasb-menu-original"<?php echo '' === $custom ? ' hidden' : ''; ?>>
+			<?php
+			printf(
+				/* translators: %s: original menu item label */
+				esc_html__( 'Was: %s', 'wp-admin-speedboost' ),
+				esc_html( $label )
+			);
+			?>
+		</span>
+		<?php
+	}
+
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-admin-speedboost' ) );
@@ -395,7 +690,9 @@ class WPASB_Admin_Menu_Page {
 		foreach ( $settings['submenu'] as $children ) {
 			$hidden_count += count( $children );
 		}
-		$top_count = count( $rows );
+		$top_count  = count( $rows );
+		$item_index = 0;
+		$has_order  = ! empty( $settings['order']['menu'] ) || ! empty( $settings['order']['submenu'] );
 		?>
 		<div class="wpasb-page wpasb-menu-page">
 			<div class="wpasb-shell">
@@ -403,7 +700,7 @@ class WPASB_Admin_Menu_Page {
 				<header class="wpasb-header">
 					<div class="wpasb-header-identity">
 						<h1 class="wpasb-header-title"><?php esc_html_e( 'Admin Menu', 'wp-admin-speedboost' ); ?></h1>
-						<p class="wpasb-header-subtitle"><?php esc_html_e( 'Hide admin menu items and block the pages behind them.', 'wp-admin-speedboost' ); ?></p>
+						<p class="wpasb-header-subtitle"><?php esc_html_e( 'Hide, rename and reorder admin menu items.', 'wp-admin-speedboost' ); ?></p>
 					</div>
 					<div class="wpasb-header-summary">
 						<p class="wpasb-summary-count" id="wpasb-menu-count">
@@ -421,11 +718,14 @@ class WPASB_Admin_Menu_Page {
 
 				<form method="post" action="options.php" class="wpasb-form" id="wpasb-menu-form">
 					<?php settings_fields( self::GROUP ); ?>
+					<input type="hidden" name="<?php echo esc_attr( WPASB_Admin_Menu::OPT ); ?>[order_mode]" id="wpasb-menu-order-mode" value="keep">
+					<input type="hidden" name="<?php echo esc_attr( WPASB_Admin_Menu::OPT ); ?>[layout]" id="wpasb-menu-layout" value="" disabled>
 
 					<div class="wpasb-module-toolbar">
 						<div class="wpasb-module-toolbar-text">
 							<h2 class="wpasb-section-title"><?php esc_html_e( 'Menu items', 'wp-admin-speedboost' ); ?></h2>
-							<p class="wpasb-section-desc"><?php esc_html_e( 'Switch an item off to hide it and block its page. Hiding a top-level item also blocks everything under it.', 'wp-admin-speedboost' ); ?></p>
+							<p class="wpasb-section-desc"><?php esc_html_e( 'Switch an item off to hide it and block its page. Hiding a top-level item also blocks everything under it. Click a label to rename it, and drag the handle to move an item.', 'wp-admin-speedboost' ); ?></p>
+							<p class="screen-reader-text" id="wpasb-menu-drag-help"><?php esc_html_e( 'Drag to move, or press the up and down arrow keys.', 'wp-admin-speedboost' ); ?></p>
 						</div>
 						<div class="wpasb-module-tools">
 							<div class="wpasb-search-control">
@@ -447,7 +747,7 @@ class WPASB_Admin_Menu_Page {
 							<span><?php esc_html_e( 'Apply to administrators too', 'wp-admin-speedboost' ); ?></span>
 						</label>
 						<p class="wpasb-menu-scope-help">
-							<?php esc_html_e( 'Leave this off and administrators keep the full menu. Speedboost, Dashboard and Profile are never blocked.', 'wp-admin-speedboost' ); ?>
+							<?php esc_html_e( 'Leave this off and administrators keep the full menu. Speedboost, Dashboard and Profile are never blocked. New labels and order apply to everyone.', 'wp-admin-speedboost' ); ?>
 						</p>
 					</div>
 
@@ -467,9 +767,11 @@ class WPASB_Admin_Menu_Page {
 							$orphan       = ! empty( $row['orphan'] );
 							?>
 							<li class="wpasb-menu-item<?php echo $row['hidden'] ? ' is-off' : ''; ?><?php echo $row['missing'] ? ' is-missing' : ''; ?>"
-								data-slug="<?php echo esc_attr( $row['slug'] ); ?>">
+								data-slug="<?php echo esc_attr( $row['slug'] ); ?>"
+								data-natural="<?php echo (int) $row['natural']; ?>">
 								<div class="wpasb-menu-row">
 									<?php
+									$this->handle( $row['label'], $orphan );
 									if ( $orphan ) {
 										echo '<span class="wpasb-toggle wpasb-toggle--placeholder" aria-hidden="true"></span>';
 									} else {
@@ -478,7 +780,7 @@ class WPASB_Admin_Menu_Page {
 									echo $this->icon_html( $row['icon'] ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside.
 									?>
 									<span class="wpasb-menu-text">
-										<span class="wpasb-menu-label"><?php echo esc_html( $row['label'] ); ?></span>
+										<?php $this->label_field( $item_index++, 'm:' . $row['slug'], $row['label'], $row['custom'], ! $row['missing'] ); ?>
 										<code class="wpasb-menu-slug"><?php echo esc_html( $row['slug'] ); ?></code>
 										<?php if ( $row['protected'] ) : ?>
 											<span class="wpasb-menu-badge" title="<?php esc_attr_e( 'Speedboost, Dashboard and Profile can never be hidden: they are how you get back in.', 'wp-admin-speedboost' ); ?>"><?php esc_html_e( 'Always shown', 'wp-admin-speedboost' ); ?></span>
@@ -508,12 +810,14 @@ class WPASB_Admin_Menu_Page {
 								<?php if ( $has_children ) : ?>
 									<ul class="wpasb-menu-sub" id="<?php echo esc_attr( $sub_id ); ?>" hidden>
 										<?php foreach ( $row['children'] as $child ) : ?>
-											<li class="wpasb-menu-child<?php echo $child['hidden'] ? ' is-off' : ''; ?><?php echo $child['missing'] ? ' is-missing' : ''; ?>"
-												data-slug="<?php echo esc_attr( $child['slug'] ); ?>">
+											<li class="wpasb-menu-child<?php echo $child['hidden'] ? ' is-off' : ''; ?><?php echo $child['missing'] ? ' is-missing' : ''; ?><?php echo $child['pinned'] ? ' is-pinned' : ''; ?>"
+												data-slug="<?php echo esc_attr( $child['slug'] ); ?>"
+												data-natural="<?php echo (int) $child['natural']; ?>">
 												<div class="wpasb-menu-row">
+													<?php $this->handle( $child['label'], $child['pinned'] || $orphan ); ?>
 													<?php $this->toggle( 's:' . self::encode_child( $row['slug'], $child['slug'] ), $child['label'], ! $child['hidden'], $child['protected'] ); ?>
 													<span class="wpasb-menu-text">
-														<span class="wpasb-menu-label"><?php echo esc_html( $child['label'] ); ?></span>
+														<?php $this->label_field( $item_index++, 's:' . self::encode_child( $row['slug'], $child['slug'] ), $child['label'], $child['custom'], ! $child['missing'] ); ?>
 														<code class="wpasb-menu-slug"><?php echo esc_html( $child['slug'] ); ?></code>
 														<?php if ( $child['protected'] ) : ?>
 															<span class="wpasb-menu-badge"><?php esc_html_e( 'Always shown', 'wp-admin-speedboost' ); ?></span>
@@ -531,6 +835,11 @@ class WPASB_Admin_Menu_Page {
 							</li>
 						<?php endforeach; ?>
 					</ul>
+
+					<div class="wpasb-menu-order-tools">
+						<button type="button" class="wpasb-btn wpasb-btn--ghost" id="wpasb-menu-reset-order"<?php echo $has_order ? '' : ' hidden'; ?>><?php esc_html_e( 'Reset order', 'wp-admin-speedboost' ); ?></button>
+						<p class="screen-reader-text" id="wpasb-menu-move-status" role="status" aria-live="polite"></p>
+					</div>
 
 					<p class="wpasb-menu-note">
 						<?php
@@ -553,6 +862,8 @@ class WPASB_Admin_Menu_Page {
 					<noscript>
 						<p><button type="submit" class="wpasb-btn wpasb-btn--primary"><?php esc_html_e( 'Save changes', 'wp-admin-speedboost' ); ?></button></p>
 					</noscript>
+					<?php // Must stay the last field: see sanitize(). ?>
+					<input type="hidden" name="<?php echo esc_attr( WPASB_Admin_Menu::OPT ); ?>[complete]" value="1">
 				</form>
 
 				<footer class="wpasb-footer">

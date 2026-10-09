@@ -9,6 +9,8 @@ define( 'ABSPATH', __DIR__ . '/' );
 
 function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
 function add_action() {}
+function add_filter() {}
+function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 
 require __DIR__ . '/../includes/class-admin-menu.php';
 require __DIR__ . '/../includes/class-admin-menu-page.php';
@@ -202,6 +204,100 @@ check( 'rows: comments label clean', 'Comments' === $rows[2]['label'] );
 check( 'rows: speedboost protected', true === $rows[3]['protected'] && true === $rows[3]['children'][1]['protected'] );
 check( 'rows: gone plugin missing', true === $rows[4]['missing'] && true === $rows[4]['hidden'] );
 check( 'rows: orphan submenu kept', ! empty( $rows[5]['orphan'] ) && 'x' === $rows[5]['children'][0]['slug'] );
+
+// ------------------------------------------------------------------ labels + order
+$l = $M::clean_settings( [
+	'labels' => [ 'menu' => [ 'edit.php' => '  <b>Berita</b>  ', 'x' => '', '' => 'y' ], 'submenu' => [ 'edit.php' => [ 'post-new.php' => 'Tulis' ], 'bad' => 'str' ] ],
+	'order'  => [ 'menu' => [ 'tools.php', 'edit.php', 'tools.php', [ 'x' ] ], 'submenu' => [ 'edit.php' => [ 'post-new.php' ] ] ],
+] );
+check( 'labels: tags stripped, empty dropped', [ 'edit.php' => 'Berita' ] === $l['labels']['menu'] );
+check( 'labels: submenu kept', [ 'edit.php' => [ 'post-new.php' => 'Tulis' ] ] === $l['labels']['submenu'] );
+check( 'order: deduped, non-string dropped', [ 'tools.php', 'edit.php' ] === $l['order']['menu'] );
+check( 'labels: length capped', 80 === strlen( $M::clean_text( str_repeat( 'a', 200 ) ) ) );
+check( 'old option shape gets empty labels/order', [ 'menu' => [], 'submenu' => [] ] === $M::clean_settings( [] )['labels'] && [ 'menu' => [], 'submenu' => [] ] === $M::clean_settings( [] )['order'] );
+
+// order_indexes: saved keys swap among their own slots, others stay put.
+$keys = [ 'index.php', 'separator1', 'edit.php', 'upload.php', 'new-plugin', 'tools.php' ];
+$idx  = $M::order_indexes( $keys, [ 'tools.php', 'index.php', 'upload.php', 'edit.php' ] );
+$got  = array_map( function ( $i ) use ( $keys ) { return $keys[ $i ]; }, $idx );
+check( 'order: saved items permuted, separator and new item keep slots', [ 'tools.php', 'separator1', 'index.php', 'upload.php', 'new-plugin', 'edit.php' ] === $got );
+check( 'order: empty saved = identity', [ 0, 1, 2 ] === $M::order_indexes( [ 'a', 'b', 'c' ], [] ) );
+
+// relabel keeps the count bubble
+check( 'relabel keeps bubble', 'Komen <span class="awaiting-mod count-2"><span class="pending-count">2</span></span>' === $M::relabel( 'Comments <span class="awaiting-mod count-2"><span class="pending-count">2</span></span>', 'Komen' ) );
+check( 'relabel escapes', 'A &amp; &lt;b&gt;' === $M::relabel( 'Posts', 'A & <b>' ) );
+
+// sort_submenu: first child pinned, keys kept
+$sub_items = [ 5 => [ 'All Posts', 'x', 'edit.php' ], 10 => [ 'Add New', 'x', 'post-new.php' ], 15 => [ 'Categories', 'x', 'edit-tags.php?taxonomy=category' ] ];
+$sorted    = $M::sort_submenu( $sub_items, [ 'edit.php', 'edit-tags.php?taxonomy=category', 'post-new.php' ] );
+check( 'submenu sort: first pinned, rest reordered, keys kept', [ 5, 15, 10 ] === array_keys( $sorted ) );
+
+// sanitize: labels and order
+$snap2 = [ 'menu' => [ 'edit.php', 'tools.php' ], 'submenu' => [ 'edit.php' => [ 'edit.php', 'post-new.php' ] ] ];
+$in    = [
+	'rows'       => [ 'm:edit.php', 'm:tools.php' ],
+	'shown'      => [ 'm:edit.php', 'm:tools.php' ],
+	'order_mode' => 'save',
+	'items'      => [
+		[ 'k' => 'm:tools.php', 'd' => 'Tools', 'l' => 'Alatan' ],
+		[ 'k' => 'm:edit.php', 'd' => 'Posts', 'l' => 'Posts' ],
+		[ 'k' => 's:edit.php>post-new.php', 'd' => 'Add New', 'l' => 'Tulis baru' ],
+		[ 'k' => 's:edit.php>edit.php', 'd' => 'All Posts', 'l' => '' ],
+		[ 'k' => 'm:evil.php', 'd' => 'x', 'l' => 'Evil' ],
+		'junk',
+	],
+];
+$out = $P::sanitize_input( $in, $M::clean_settings( [] ), $snap2 );
+check( 'sanitize: custom label saved', [ 'tools.php' => 'Alatan' ] === $out['labels']['menu'] );
+check( 'sanitize: label equal to original not saved, unknown slug rejected', ! isset( $out['labels']['menu']['edit.php'] ) && ! isset( $out['labels']['menu']['evil.php'] ) );
+check( 'sanitize: submenu label', [ 'edit.php' => [ 'post-new.php' => 'Tulis baru' ] ] === $out['labels']['submenu'] );
+check( 'sanitize: order saved in posted order', [ 'tools.php', 'edit.php' ] === $out['order']['menu'] && [ 'post-new.php', 'edit.php' ] === $out['order']['submenu']['edit.php'] );
+
+$in['order_mode'] = 'keep';
+$kept = $P::sanitize_input( $in, $out, $snap2 );
+check( 'sanitize: keep mode keeps stored order', $out['order'] === $kept['order'] );
+$in['order_mode'] = 'reset';
+check( 'sanitize: reset clears order', [ 'menu' => [], 'submenu' => [] ] === $P::sanitize_input( $in, $out, $snap2 )['order'] );
+unset( $in['items'] );
+$in['order_mode'] = 'keep';
+check( 'sanitize: no items posted keeps labels', $out['labels'] === $P::sanitize_input( $in, $out, $snap2 )['labels'] );
+$in['items'] = [ [ 'k' => 'm:tools.php', 'd' => 'Tools', 'l' => '' ] ];
+check( 'sanitize: clearing a label removes it', [] === $P::sanitize_input( $in, $out, $snap2 )['labels']['menu'] );
+
+// rows follow the saved order; first child stays first
+$rows2 = $P::build_rows( $captured, $M::clean_settings( [ 'order' => [ 'menu' => [ 'wp-admin-speedboost', 'edit.php', 'index.php' ], 'submenu' => [ 'edit.php' => [ 'post-new.php', 'edit.php' ] ] ], 'labels' => [ 'menu' => [ 'edit.php' => 'Berita' ] ] ] ) );
+check( 'rows: saved order applied', [ 'wp-admin-speedboost', 'edit.php', 'edit-comments.php', 'index.php' ] === array_column( $rows2, 'slug' ) );
+check( 'rows: custom label + natural index', 'Berita' === $rows2[1]['custom'] && 1 === $rows2[1]['natural'] && 'Posts' === $rows2[1]['label'] );
+check( 'rows: pinned first child', true === $rows2[1]['children'][0]['pinned'] && 'edit.php' === $rows2[1]['children'][0]['slug'] );
+
+// ------------------------------------------------------------------ data kept for entries not on screen
+$cur3 = $M::clean_settings( [
+	'labels' => [ 'menu' => [ 'woocommerce' => 'Kedai', 'tools.php' => 'Old' ], 'submenu' => [ 'woocommerce' => [ 'wc-orders' => 'Pesanan' ] ] ],
+	'order'  => [ 'menu' => [ 'index.php', 'woocommerce', 'edit.php', 'tools.php' ], 'submenu' => [ 'woocommerce' => [ 'wc-admin', 'wc-orders' ] ] ],
+] );
+$snap3 = [ 'menu' => [ 'index.php', 'edit.php', 'tools.php' ] ];
+$in3   = [
+	'rows'       => [ 'm:edit.php', 'm:tools.php' ],
+	'shown'      => [ 'm:edit.php', 'm:tools.php' ],
+	'order_mode' => 'save',
+	'items'      => [ [ 'k' => 'm:index.php', 'd' => 'Dashboard', 'l' => '' ], [ 'k' => 'm:tools.php', 'd' => 'Tools', 'l' => 'Alatan' ], [ 'k' => 'm:edit.php', 'd' => 'Posts', 'l' => '' ] ],
+];
+$o3 = $P::sanitize_input( $in3, $cur3, $snap3 );
+check( 'keep: label of inactive plugin kept', 'Kedai' === $o3['labels']['menu']['woocommerce'] && 'Pesanan' === $o3['labels']['submenu']['woocommerce']['wc-orders'] );
+check( 'keep: on-screen label replaced', 'Alatan' === $o3['labels']['menu']['tools.php'] );
+check( 'keep: absent slug keeps its place in order', [ 'index.php', 'woocommerce', 'tools.php', 'edit.php' ] === $o3['order']['menu'] );
+check( 'keep: absent parent submenu order kept', [ 'wc-admin', 'wc-orders' ] === $o3['order']['submenu']['woocommerce'] );
+// A row without a label field (missing entry) must not wipe its label.
+$o4 = $P::sanitize_input( [ 'rows' => [], 'items' => [ [ 'k' => 'm:woocommerce' ] ] ], $cur3, $snap3 );
+check( 'keep: row without label field keeps label', 'Kedai' === $o4['labels']['menu']['woocommerce'] );
+// JSON layout path (what the JS posts)
+$o5 = $P::sanitize_input( [ 'rows' => [ 'm:tools.php' ], 'shown' => [ 'm:tools.php' ], 'order_mode' => 'save', 'layout' => json_encode( [ [ 'k' => 'm:tools.php', 'd' => 'Tools', 'l' => 'Alat "x"' ], [ 'k' => 'm:edit.php', 'd' => 'Posts', 'l' => '' ] ] ) ], $M::clean_settings( [] ), $snap3 );
+check( 'layout json: label + order', 'Alat "x"' === $o5['labels']['menu']['tools.php'] && [ 'tools.php', 'edit.php' ] === $o5['order']['menu'] );
+$o6 = $P::sanitize_input( [ 'rows' => [], 'layout' => '{bad json' ], $cur3, $snap3 );
+check( 'layout bad json: labels kept', $cur3['labels'] === $o6['labels'] );
+check( 'merge_order: leading absent goes first', [ 'a', 'x', 'b' ] === $P::merge_order( [ 'x', 'b' ], [ 'a', 'b' ] ) );
+check( 'merge_order: absent goes after its old predecessor', [ 'b', 'a', 'c', 'x' ] === $P::merge_order( [ 'b', 'a', 'x' ], [ 'a', 'c', 'x' ] ) );
+check( 'merge_order: nothing absent = unchanged', [ 'c', 'b', 'a' ] === $P::merge_order( [ 'c', 'b', 'a' ], [ 'a', 'b', 'c' ] ) );
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

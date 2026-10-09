@@ -25,6 +25,7 @@ class WPASB_Admin_Menu {
 	const OPT_SNAPSHOT = 'wpasb_admin_menu_snapshot';
 	const PAGE_SLUG    = 'wpasb-admin-menu';
 	const KILL_SWITCH  = 'WPASB_DISABLE_MENU_EDITOR';
+	const LABEL_MAX    = 80;
 
 	/**
 	 * $menu / $submenu as they were before this module removed anything.
@@ -71,6 +72,11 @@ class WPASB_Admin_Menu {
 
 		add_action( 'admin_menu', [ __CLASS__, 'capture' ], 9998 );
 		add_action( 'admin_menu', [ __CLASS__, 'apply' ], 9999 );
+		// Same priority, registered later: runs after the hidden rows are gone.
+		add_action( 'admin_menu', [ __CLASS__, 'customize' ], 9999 );
+		// Core sorts the top level after admin_menu, through these filters.
+		add_filter( 'custom_menu_order', [ __CLASS__, 'custom_menu_order' ], 9999 );
+		add_filter( 'menu_order', [ __CLASS__, 'filter_menu_order' ], 9999 );
 		// After the menu is final but before admin_init or any screen output,
 		// and before core's own access check can answer with its generic
 		// "not allowed" page.
@@ -83,7 +89,7 @@ class WPASB_Admin_Menu {
 	// ------------------------------------------------------------------
 
 	/**
-	 * @return array{menu:string[], submenu:array<string,string[]>, include_admin:bool}
+	 * @return array{menu:string[], submenu:array<string,string[]>, include_admin:bool, labels:array, order:array}
 	 */
 	public static function get_settings() {
 		$raw = get_option( self::OPT, [] );
@@ -127,7 +133,198 @@ class WPASB_Admin_Menu {
 			'menu'          => array_keys( $menu ),
 			'submenu'       => array_map( 'array_keys', $submenu ),
 			'include_admin' => ! empty( $raw['include_admin'] ),
+			'labels'        => self::clean_labels( isset( $raw['labels'] ) ? $raw['labels'] : [] ),
+			'order'         => self::clean_order( isset( $raw['order'] ) ? $raw['order'] : [] ),
 		];
+	}
+
+	/**
+	 * Custom labels: { menu: slug => label, submenu: parent => { child => label } }.
+	 * Protected slugs may be renamed; only hiding them is refused.
+	 */
+	public static function clean_labels( $raw ) {
+		$out = [ 'menu' => [], 'submenu' => [] ];
+		if ( ! is_array( $raw ) ) {
+			return $out;
+		}
+
+		if ( ! empty( $raw['menu'] ) && is_array( $raw['menu'] ) ) {
+			foreach ( $raw['menu'] as $slug => $label ) {
+				$slug  = self::normalize( $slug );
+				$label = self::clean_text( $label );
+				if ( '' !== $slug && '' !== $label ) {
+					$out['menu'][ $slug ] = $label;
+				}
+			}
+		}
+
+		if ( ! empty( $raw['submenu'] ) && is_array( $raw['submenu'] ) ) {
+			foreach ( $raw['submenu'] as $parent => $children ) {
+				$parent = self::normalize( $parent );
+				if ( '' === $parent || ! is_array( $children ) ) {
+					continue;
+				}
+				foreach ( $children as $child => $label ) {
+					$child = self::normalize( $child );
+					$label = self::clean_text( $label );
+					if ( '' !== $child && '' !== $label ) {
+						$out['submenu'][ $parent ][ $child ] = $label;
+					}
+				}
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Saved order: { menu: [slug, ...], submenu: parent => [child, ...] }.
+	 */
+	public static function clean_order( $raw ) {
+		$out = [ 'menu' => [], 'submenu' => [] ];
+		if ( ! is_array( $raw ) ) {
+			return $out;
+		}
+
+		$out['menu'] = self::clean_slug_list( isset( $raw['menu'] ) ? $raw['menu'] : [] );
+
+		if ( ! empty( $raw['submenu'] ) && is_array( $raw['submenu'] ) ) {
+			foreach ( $raw['submenu'] as $parent => $children ) {
+				$parent = self::normalize( $parent );
+				$list   = self::clean_slug_list( $children );
+				if ( '' !== $parent && $list ) {
+					$out['submenu'][ $parent ] = $list;
+				}
+			}
+		}
+
+		return $out;
+	}
+
+	private static function clean_slug_list( $list ) {
+		$out = [];
+		if ( ! is_array( $list ) ) {
+			return $out;
+		}
+		foreach ( $list as $slug ) {
+			if ( ! is_string( $slug ) ) {
+				continue;
+			}
+			$slug = self::normalize( $slug );
+			if ( '' !== $slug ) {
+				$out[ $slug ] = true;
+			}
+		}
+		return array_keys( $out );
+	}
+
+	/**
+	 * A custom label as plain, single-line text.
+	 */
+	public static function clean_text( $text ) {
+		if ( ! is_string( $text ) ) {
+			return '';
+		}
+		$text = preg_replace( '/\s+/u', ' ', wp_strip_all_tags( $text ) );
+		if ( null === $text ) {
+			return ''; // Invalid UTF-8.
+		}
+		$text = trim( $text );
+
+		return function_exists( 'mb_substr' ) ? mb_substr( $text, 0, self::LABEL_MAX, 'UTF-8' ) : substr( $text, 0, self::LABEL_MAX );
+	}
+
+	public static function has_custom( array $settings ) {
+		return ! empty( $settings['labels']['menu'] )
+			|| ! empty( $settings['labels']['submenu'] )
+			|| ! empty( $settings['order']['menu'] )
+			|| ! empty( $settings['order']['submenu'] );
+	}
+
+	/**
+	 * New order for $keys. Keys named in $saved trade places among their own
+	 * slots in saved order; every other key (separators, menus registered
+	 * after the save) keeps its slot.
+	 *
+	 * @param string[] $keys  Current keys, in current order.
+	 * @param string[] $saved Saved order.
+	 * @return int[] Indexes into $keys, in the new order.
+	 */
+	public static function order_indexes( array $keys, array $saved ) {
+		$keys = array_values( $keys );
+		if ( ! $keys ) {
+			return [];
+		}
+
+		$rank    = array_flip( array_values( $saved ) );
+		$movable = [];
+		foreach ( $keys as $i => $key ) {
+			if ( isset( $rank[ $key ] ) ) {
+				$movable[] = $i;
+			}
+		}
+
+		$sorted = $movable;
+		usort(
+			$sorted,
+			function ( $a, $b ) use ( $keys, $rank ) {
+				return [ $rank[ $keys[ $a ] ], $a ] <=> [ $rank[ $keys[ $b ] ], $b ];
+			}
+		);
+
+		$out = range( 0, count( $keys ) - 1 );
+		foreach ( $movable as $n => $slot ) {
+			$out[ $slot ] = $sorted[ $n ];
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Menu title with a custom label, keeping core's count bubble (pending
+	 * comments, plugin updates) after it.
+	 */
+	public static function relabel( $title, $label ) {
+		$title = (string) $title;
+		$tail  = '';
+
+		if ( preg_match( '#<span\b[^>]*class=(["\'])[^"\']*(?:update-plugins|awaiting-mod|count-\d+|pending-count|plugin-count|update-count|menu-counter)#i', $title, $m, PREG_OFFSET_CAPTURE ) ) {
+			$tail = ' ' . substr( $title, $m[0][1] );
+		}
+
+		return esc_html( $label ) . $tail;
+	}
+
+	/**
+	 * Submenu items in their saved order. The first item stays first: core
+	 * makes the first child the parent's link and would otherwise re-parent
+	 * the whole menu.
+	 *
+	 * @param array    $items Submenu rows keyed by position.
+	 * @param string[] $saved Saved child order.
+	 */
+	public static function sort_submenu( array $items, array $saved ) {
+		if ( count( $items ) < 2 || ! $saved ) {
+			return $items;
+		}
+
+		ksort( $items, SORT_NUMERIC );
+		$positions = array_keys( $items );
+		$first     = array_shift( $positions );
+
+		$slugs = [];
+		foreach ( $positions as $pos ) {
+			$slugs[] = isset( $items[ $pos ][2] ) ? self::normalize( $items[ $pos ][2] ) : '';
+		}
+
+		// Keys are kept (only the array order changes) so code that looks an
+		// item up by position still finds it.
+		$out = [ $first => $items[ $first ] ];
+		foreach ( self::order_indexes( $slugs, $saved ) as $i ) {
+			$out[ $positions[ $i ] ] = $items[ $positions[ $i ] ];
+		}
+
+		return $out;
 	}
 
 	/**
@@ -528,6 +725,112 @@ class WPASB_Admin_Menu {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Custom labels and submenu order. Cosmetic, so it applies to every user,
+	 * administrators included.
+	 */
+	public static function customize() {
+		if ( self::skip_request() ) {
+			return;
+		}
+
+		$settings = self::get_settings();
+		if ( ! self::has_custom( $settings ) ) {
+			return;
+		}
+
+		global $menu, $submenu;
+
+		$labels = $settings['labels'];
+
+		if ( $labels['menu'] && is_array( $menu ) ) {
+			foreach ( $menu as $i => $item ) {
+				$slug = empty( $item[2] ) ? '' : self::normalize( $item[2] );
+				if ( '' !== $slug && isset( $labels['menu'][ $slug ] ) ) {
+					$menu[ $i ][0] = self::relabel( isset( $item[0] ) ? $item[0] : '', $labels['menu'][ $slug ] );
+				}
+			}
+		}
+
+		if ( ! is_array( $submenu ) ) {
+			return;
+		}
+
+		foreach ( $submenu as $parent => $items ) {
+			if ( ! is_array( $items ) ) {
+				continue;
+			}
+			$p = self::normalize( $parent );
+
+			if ( ! empty( $labels['submenu'][ $p ] ) ) {
+				foreach ( $items as $i => $item ) {
+					$slug = empty( $item[2] ) ? '' : self::normalize( $item[2] );
+					if ( '' !== $slug && isset( $labels['submenu'][ $p ][ $slug ] ) ) {
+						$submenu[ $parent ][ $i ][0] = self::relabel( isset( $item[0] ) ? $item[0] : '', $labels['submenu'][ $p ][ $slug ] );
+					}
+				}
+			}
+
+			if ( ! empty( $settings['order']['submenu'][ $p ] ) ) {
+				$submenu[ $parent ] = self::sort_submenu( $submenu[ $parent ], $settings['order']['submenu'][ $p ] );
+			}
+		}
+	}
+
+	public static function custom_menu_order( $custom ) {
+		if ( $custom || self::skip_request() ) {
+			return $custom;
+		}
+		$settings = self::get_settings();
+		return ! empty( $settings['order']['menu'] );
+	}
+
+	/**
+	 * @param array $order Top-level menu slugs as core is about to sort them.
+	 */
+	public static function filter_menu_order( $order ) {
+		if ( ! is_array( $order ) || self::skip_request() ) {
+			return $order;
+		}
+
+		$settings = self::get_settings();
+		if ( empty( $settings['order']['menu'] ) ) {
+			return $order;
+		}
+
+		// Core may have re-pointed a parent at its first child (old slug =>
+		// new slug in $_wp_real_parent_file); fall back to the saved slug.
+		global $_wp_real_parent_file;
+		$back = [];
+		if ( is_array( $_wp_real_parent_file ) ) {
+			foreach ( $_wp_real_parent_file as $old => $new ) {
+				if ( is_string( $new ) && ! isset( $back[ $new ] ) ) {
+					$back[ $new ] = $old;
+				}
+			}
+		}
+
+		$saved = array_flip( $settings['order']['menu'] );
+		$order = array_values( $order );
+		$keys  = [];
+		foreach ( $order as $slug ) {
+			$key = self::normalize( (string) $slug );
+			// The map also lists screens that merely live under a parent
+			// (theme-editor.php => tools.php), so a direct match wins.
+			if ( ! isset( $saved[ $key ] ) && isset( $back[ (string) $slug ] ) ) {
+				$key = self::normalize( $back[ (string) $slug ] );
+			}
+			$keys[] = $key;
+		}
+
+		$out = [];
+		foreach ( self::order_indexes( $keys, $settings['order']['menu'] ) as $i ) {
+			$out[] = $order[ $i ];
+		}
+
+		return $out;
 	}
 
 	/**
