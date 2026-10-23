@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -135,6 +135,14 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.9.1 =
+* Security: Hide Login URL could be bypassed. A request to wp-login.php?action=postpass that also posted action=login reached the real login form and signed in, so wp-login.php stayed open to brute force. Only a genuine password-protected post submission now passes through.
+* Security: Hide Login now matches wp-login.php and wp-register.php without regard to letter case, for servers with case-insensitive file systems.
+* Security: REST API User Lockdown also blocks /wp/v2/users when the route is written in a different case or with doubled slashes. An empty allowlist entry no longer opens every user route.
+* Security: Duplicate Page & Post no longer lets a user copy a password-protected post they cannot edit, which exposed its content in the editor of the copy.
+* Security: The updater only adds the GitHub token to HTTPS requests for api.github.com under this plugin's repository, and ignores a malformed repository setting.
+* Security: Database cleanup never deletes transients that have not expired, whatever the browser sends. On multisite, network transients and the shared users tables are only touched by a network administrator.
 
 = 1.9.0 =
 * Added: Rename admin menu items. On Speedboost > Admin Menu, click any label (top level or submenu), type a new name and save. Clear it to go back to the original. Count bubbles such as pending comments stay next to the new name.

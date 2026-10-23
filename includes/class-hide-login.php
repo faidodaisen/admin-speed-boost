@@ -129,7 +129,12 @@ class WPASB_Hide_Login {
 		$request = wp_parse_url( $uri );
 		$path    = isset( $request['path'] ) ? $request['path'] : '';
 
-		if ( ( false !== strpos( $uri, 'wp-login.php' ) || ( $path && untrailingslashit( $path ) === site_url( 'wp-login', 'relative' ) ) ) && ! is_admin() ) {
+		// Case-insensitive filesystems (Windows, IIS, macOS) serve
+		// /WP-LOGIN.PHP as wp-login.php, so match the core files without case.
+		$uri_lc  = strtolower( $uri );
+		$path_lc = strtolower( untrailingslashit( $path ) );
+
+		if ( ( false !== strpos( $uri_lc, 'wp-login.php' ) || ( $path && $path_lc === strtolower( site_url( 'wp-login', 'relative' ) ) ) ) && ! is_admin() ) {
 
 			$this->wp_login_php = true;
 
@@ -148,7 +153,7 @@ class WPASB_Hide_Login {
 
 			$pagenow = 'wp-login.php';
 
-		} elseif ( ( false !== strpos( $uri, 'wp-register.php' ) || ( $path && untrailingslashit( $path ) === site_url( 'wp-register', 'relative' ) ) ) && ! is_admin() ) {
+		} elseif ( ( false !== strpos( $uri_lc, 'wp-register.php' ) || ( $path && $path_lc === strtolower( site_url( 'wp-register', 'relative' ) ) ) ) && ! is_admin() ) {
 
 			$this->wp_login_php = true;
 
@@ -175,7 +180,7 @@ class WPASB_Hide_Login {
 		$path    = isset( $request['path'] ) ? $request['path'] : '';
 
 		// Password-protected post submissions post to wp-login.php on purpose.
-		if ( isset( $_GET['action'] ) && 'postpass' === $_GET['action'] && isset( $_POST['post_password'] ) ) {
+		if ( $this->is_postpass_request() ) {
 			return;
 		}
 
@@ -256,6 +261,29 @@ class WPASB_Hide_Login {
 			require_once ABSPATH . 'wp-login.php';
 			die;
 		}
+	}
+
+	/**
+	 * A genuine password-protected post submission, and nothing else.
+	 *
+	 * Checking only $_GET['action'] let a request through to the real
+	 * wp-login.php with ?action=postpass in the URL and action=login in the
+	 * POST body. WordPress rebuilds $_REQUEST as array_merge( $_GET, $_POST ),
+	 * so wp-login.php saw action=login and signed the visitor in, which
+	 * reopened wp-login.php to brute force. The action wp-login.php will
+	 * actually run ($_REQUEST; ?key= and ?checkemail= override it) must be
+	 * postpass too.
+	 */
+	private function is_postpass_request() {
+		// phpcs:disable WordPress.Security.NonceVerification -- routing check only.
+		return isset( $_GET['action'], $_REQUEST['action'], $_POST['post_password'] )
+			&& 'postpass' === $_GET['action']
+			&& 'postpass' === $_REQUEST['action']
+			&& ! isset( $_POST['action'] )
+			&& ! isset( $_GET['key'] )
+			&& ! isset( $_GET['checkemail'] )
+			&& is_string( $_POST['post_password'] );
+		// phpcs:enable
 	}
 
 	public function block_signup_access() {

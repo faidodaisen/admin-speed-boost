@@ -523,6 +523,10 @@ class WPASB_DB_Cleanup {
 	private function expired_transients_sql( $cutoff ) {
 		global $wpdb;
 
+		// The cutoff comes back from the browser. Never let it reach past now,
+		// or a crafted value would sweep transients that are still valid.
+		$cutoff = min( (int) $cutoff, time() );
+
 		$sql = $wpdb->prepare(
 			"SELECT option_name AS name, option_value AS expires, 'options' AS origin
 			 FROM {$wpdb->options}
@@ -533,7 +537,9 @@ class WPASB_DB_Cleanup {
 			(int) $cutoff
 		);
 
-		if ( is_multisite() ) {
+		// Network transients belong to the whole network. A single site's
+		// administrator (manage_options on one site) must not delete them.
+		if ( is_multisite() && self::can_touch_network() ) {
 			$sql .= $wpdb->prepare(
 				" UNION ALL
 				 SELECT meta_key AS name, meta_value AS expires, 'network' AS origin
@@ -552,6 +558,14 @@ class WPASB_DB_Cleanup {
 
 	private function is_site_transient( $option_name ) {
 		return 0 === strpos( $option_name, '_site_transient_timeout_' );
+	}
+
+	/**
+	 * Network-wide data (sitemeta transients, the shared users tables) is a
+	 * network administrator's call. Always true on a single site.
+	 */
+	private static function can_touch_network() {
+		return ! is_multisite() || current_user_can( 'manage_network_options' );
 	}
 
 	private function transient_key( $option_name ) {
@@ -578,13 +592,21 @@ class WPASB_DB_Cleanup {
 	private function table_status() {
 		global $wpdb;
 
+		$tables = [
+			$wpdb->posts, $wpdb->postmeta, $wpdb->options, $wpdb->comments,
+			$wpdb->commentmeta, $wpdb->terms, $wpdb->term_taxonomy,
+			$wpdb->term_relationships, $wpdb->termmeta,
+		];
+
+		// users / usermeta are shared by every site on a network.
+		if ( self::can_touch_network() ) {
+			$tables[] = $wpdb->users;
+			$tables[] = $wpdb->usermeta;
+		}
+
 		$names = array_values(
 			array_filter(
-				[
-					$wpdb->posts, $wpdb->postmeta, $wpdb->options, $wpdb->comments,
-					$wpdb->commentmeta, $wpdb->terms, $wpdb->term_taxonomy,
-					$wpdb->term_relationships, $wpdb->termmeta, $wpdb->users, $wpdb->usermeta,
-				],
+				$tables,
 				static function ( $table ) {
 					return (bool) preg_match( '/^[A-Za-z0-9_]+$/', $table );
 				}
@@ -724,7 +746,14 @@ class WPASB_DB_Cleanup {
 				delete_site_transient( $key );
 				delete_site_option( $r->name );
 			} elseif ( $this->is_site_transient( $r->name ) ) {
-				delete_site_transient( $key );
+				if ( is_multisite() ) {
+					// A leftover row in this site's options table. The live
+					// network copy sits in sitemeta and must not be touched
+					// from here, so delete only the two option rows.
+					delete_option( '_site_transient_' . $key );
+				} else {
+					delete_site_transient( $key );
+				}
 				delete_option( $r->name );
 			} else {
 				delete_transient( $key );

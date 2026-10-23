@@ -125,8 +125,18 @@ class WPASB_Duplicate_Post {
 		}
 
 		// Needs to be able to read this one and create a new one of the same type.
-		return current_user_can( 'read_post', $post->ID )
-			&& current_user_can( $type->cap->create_posts );
+		if ( ! current_user_can( 'read_post', $post->ID ) || ! current_user_can( $type->cap->create_posts ) ) {
+			return false;
+		}
+
+		// read_post ignores post passwords, and the copy is owned (so editable)
+		// by whoever made it. Without this, a contributor could duplicate a
+		// password-protected post and read its content in the editor.
+		if ( '' !== (string) $post->post_password && ! current_user_can( 'edit_post', $post->ID ) ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

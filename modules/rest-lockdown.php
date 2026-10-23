@@ -22,7 +22,10 @@ return [
 				return $result;
 			}
 
-			$route = $request->get_route();
+			// REST routes match case-insensitively (WP_REST_Server uses the /i
+			// flag), so /wp/v2/Users reaches the same endpoint. Compare lowered,
+			// and collapse duplicate slashes for the same reason.
+			$route = strtolower( (string) preg_replace( '#/+#', '/', (string) $request->get_route() ) );
 
 			if ( 0 !== strpos( $route, '/wp/v2/users' ) ) {
 				return $result;
@@ -38,7 +41,7 @@ return [
 			 */
 			$allowed = (array) apply_filters( 'wpasb_rest_user_routes_allowlist', [] );
 			foreach ( $allowed as $allowed_route ) {
-				if ( 0 === strpos( $route, $allowed_route ) ) {
+				if ( is_string( $allowed_route ) && '' !== $allowed_route && 0 === strpos( $route, strtolower( $allowed_route ) ) ) {
 					return $result;
 				}
 			}

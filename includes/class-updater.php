@@ -266,15 +266,34 @@ class WPASB_Updater {
 
 		// A malformed filter return must not break update checks entirely.
 		if ( ! is_array( $filtered ) ) {
-			return $config;
+			$filtered = $config;
+		}
+
+		$repo = isset( $filtered['repo'] ) ? (string) $filtered['repo'] : $config['repo'];
+
+		// The repo is spliced into API URLs and decides which requests get the
+		// token. Anything that is not a plain owner/name pair ("../", "@", a
+		// full URL) falls back to the shipped repo.
+		if ( ! self::is_valid_repo( $repo ) ) {
+			$repo = self::REPO;
 		}
 
 		return [
-			'repo'        => isset( $filtered['repo'] ) ? (string) $filtered['repo'] : $config['repo'],
+			'repo'        => $repo,
 			'token'       => isset( $filtered['token'] ) ? (string) $filtered['token'] : $config['token'],
 			'prereleases' => ! empty( $filtered['prereleases'] ),
 			'enabled'     => ! isset( $filtered['enabled'] ) || ! empty( $filtered['enabled'] ),
 		];
+	}
+
+	/**
+	 * GitHub owner/name: letters, digits, dot, dash, underscore. No dot-only
+	 * segments, so the value can never walk the API path.
+	 */
+	public static function is_valid_repo( $repo ) {
+		return is_string( $repo )
+			&& (bool) preg_match( '#^[A-Za-z0-9_.-]{1,100}/[A-Za-z0-9_.-]{1,100}$#', $repo )
+			&& ! preg_match( '#(^|/)\.{1,2}(/|$)#', $repo );
 	}
 
 	public static function plugin_basename() {
@@ -684,13 +703,7 @@ class WPASB_Updater {
 
 		$config = self::config();
 
-		if ( '' === $config['token'] || false === strpos( $url, 'api.github.com' ) ) {
-			return $args;
-		}
-
-		// Only decorate requests aimed at OUR repo — never leak the token into
-		// another plugin's GitHub traffic.
-		if ( false === strpos( $url, '/repos/' . $config['repo'] . '/' ) ) {
+		if ( '' === $config['token'] || ! self::is_own_api_url( $url, $config['repo'] ) ) {
 			return $args;
 		}
 
@@ -702,6 +715,33 @@ class WPASB_Updater {
 		);
 
 		return $args;
+	}
+
+	/**
+	 * True only for https://api.github.com/repos/<our repo>/... . The old
+	 * substring test also matched any URL that merely contained those
+	 * strings (https://evil.example/?api.github.com/repos/owner/repo/), which
+	 * would have sent the token to that host.
+	 */
+	public static function is_own_api_url( $url, $repo ) {
+		if ( ! is_string( $url ) || ! self::is_valid_repo( $repo ) ) {
+			return false;
+		}
+
+		$parts = parse_url( $url );
+
+		if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+			return false;
+		}
+
+		if ( 'https' !== strtolower( $parts['scheme'] ) || 'api.github.com' !== strtolower( $parts['host'] )
+			|| isset( $parts['user'] ) || isset( $parts['pass'] ) || isset( $parts['port'] ) ) {
+			return false;
+		}
+
+		$path = isset( $parts['path'] ) ? $parts['path'] : '';
+
+		return 0 === stripos( $path, '/repos/' . $repo . '/' );
 	}
 
 	/**
