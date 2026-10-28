@@ -1013,6 +1013,11 @@ class WPASB_Admin_Menu {
 function wpasb_admin_menu_init() {
 	WPASB_Admin_Menu::init();
 
+	// Cosmetic only, so the lock-out kill switch does not turn it off.
+	if ( is_admin() && class_exists( 'WPASB_Admin_Sidebar' ) ) {
+		WPASB_Admin_Sidebar::init();
+	}
+
 	if ( is_admin() && class_exists( 'WPASB_Admin_Menu_Page' ) ) {
 		WPASB_Admin_Menu_Page::instance();
 	}

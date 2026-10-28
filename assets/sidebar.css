@@ -1,0 +1,231 @@
+/**
+ * WP Admin Speedboost — sidebar style (Admin Menu Editor module).
+ *
+ * Two independent switches, each a body class:
+ *   .wpasb-sb-comfy  a wider sidebar with roomier rows (desktop, unfolded only)
+ *   .wpasb-sb-brand  brand colours for the sidebar, its submenus and the
+ *                    active item
+ * Values come from custom properties printed inline (see
+ * WPASB_Admin_Sidebar::css_vars()), so the editor screen can preview a change
+ * by swapping the properties instead of the sheet.
+ */
+
+/* --------------------------------------------------------------------
+ * Comfortable sidebar
+ *
+ * Desktop only (core folds the menu to icons below 961px) and never while
+ * the user has collapsed it. Every width core hard-codes at 160px is moved.
+ * ------------------------------------------------------------------ */
+@media screen and (min-width: 961px) {
+	body.wpasb-sb-comfy:not(.folded) #adminmenuback,
+	body.wpasb-sb-comfy:not(.folded) #adminmenuwrap,
+	body.wpasb-sb-comfy:not(.folded) #adminmenu,
+	body.wpasb-sb-comfy:not(.folded) #adminmenu .wp-submenu {
+		width: var(--wpasb-sb-width);
+	}
+
+	/* Fly-out submenus of the items that are not open. */
+	body.wpasb-sb-comfy:not(.folded) #adminmenu .wp-not-current-submenu .wp-submenu {
+		left: var(--wpasb-sb-width);
+		width: auto;
+		min-width: var(--wpasb-sb-width);
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #wpcontent,
+	body.wpasb-sb-comfy:not(.folded) #wpfooter {
+		margin-left: var(--wpasb-sb-width);
+	}
+
+	/* Block editor, Site editor, Widgets screen. */
+	body.wpasb-sb-comfy:not(.folded) .interface-interface-skeleton {
+		left: var(--wpasb-sb-width);
+	}
+
+	/* WooCommerce admin's fixed footer bar. */
+	body.wpasb-sb-comfy:not(.folded) .woocommerce-layout__footer {
+		width: calc(100% - var(--wpasb-sb-width));
+	}
+
+	/* Roomier rows. */
+	body.wpasb-sb-comfy:not(.folded) #adminmenu {
+		margin: 16px 0;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu li.menu-top {
+		min-height: 40px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu div.wp-menu-image {
+		width: 44px;
+		height: 40px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu div.wp-menu-image:before {
+		padding: 10px 0;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu .wp-menu-image img {
+		padding: 12px 0 0;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu div.wp-menu-name {
+		padding: 11px 12px 11px 44px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu li.wp-menu-separator {
+		margin: 4px 0 8px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu .wp-submenu {
+		padding: 8px 0;
+	}
+
+	/* Open submenu: its labels line up with the parent's label. */
+	body.wpasb-sb-comfy:not(.folded) #adminmenu .wp-has-current-submenu ul > li > a {
+		padding: 7px 12px 7px 44px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu .wp-not-current-submenu li > a {
+		padding: 7px 18px 7px 16px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #adminmenu li.wp-has-submenu.wp-not-current-submenu:hover:after,
+	body.wpasb-sb-comfy:not(.folded) #adminmenu li.wp-has-submenu.wp-not-current-submenu:focus-within:after {
+		top: 12px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #collapse-button {
+		height: 40px;
+		margin-top: 4px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #collapse-button .collapse-button-icon {
+		width: 44px;
+		height: 40px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #collapse-button .collapse-button-icon:after {
+		top: 10px;
+	}
+
+	body.wpasb-sb-comfy:not(.folded) #collapse-button .collapse-button-label {
+		top: 11px;
+		padding-left: 44px;
+	}
+}
+
+/* --------------------------------------------------------------------
+ * Brand colours
+ *
+ * Mirrors the selector set of core's colour schemes
+ * (wp-admin/css/colors/_admin.scss), so it wins over any scheme the user
+ * picked in their profile.
+ * ------------------------------------------------------------------ */
+body.wpasb-sb-brand #adminmenuback,
+body.wpasb-sb-brand #adminmenuwrap,
+body.wpasb-sb-brand #adminmenu {
+	background: var(--wpasb-sb-bg);
+}
+
+body.wpasb-sb-brand #adminmenu a {
+	color: var(--wpasb-sb-ink);
+}
+
+body.wpasb-sb-brand #adminmenu div.wp-menu-image:before {
+	color: var(--wpasb-sb-muted);
+}
+
+body.wpasb-sb-brand #adminmenu a:hover,
+body.wpasb-sb-brand #adminmenu li.menu-top:hover,
+body.wpasb-sb-brand #adminmenu li.opensub > a.menu-top,
+body.wpasb-sb-brand #adminmenu li > a.menu-top:focus {
+	color: var(--wpasb-sb-ink);
+	background-color: var(--wpasb-sb-hover);
+}
+
+body.wpasb-sb-brand #adminmenu li.menu-top:hover div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu li.opensub > a.menu-top div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu li:hover div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu li a:focus div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu li.opensub div.wp-menu-image:before {
+	color: var(--wpasb-sb-ink);
+}
+
+/* Submenu */
+body.wpasb-sb-brand #adminmenu .wp-submenu,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu .wp-submenu,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu.opensub .wp-submenu,
+body.wpasb-sb-brand #adminmenu a.wp-has-current-submenu:focus + .wp-submenu,
+body.wpasb-sb-brand.folded #adminmenu .wp-has-current-submenu .wp-submenu {
+	background: var(--wpasb-sub-bg);
+}
+
+body.wpasb-sb-brand #adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after,
+body.wpasb-sb-brand #adminmenu li.wp-has-submenu.wp-not-current-submenu:focus-within:after {
+	border-right-color: var(--wpasb-sub-bg);
+}
+
+body.wpasb-sb-brand #adminmenu .wp-submenu .wp-submenu-head,
+body.wpasb-sb-brand #adminmenu .wp-submenu a,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu .wp-submenu a,
+body.wpasb-sb-brand #adminmenu a.wp-has-current-submenu:focus + .wp-submenu a,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu.opensub .wp-submenu a {
+	color: var(--wpasb-sub-muted);
+}
+
+body.wpasb-sb-brand #adminmenu .wp-submenu a:focus,
+body.wpasb-sb-brand #adminmenu .wp-submenu a:hover,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu .wp-submenu a:focus,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu .wp-submenu a:hover,
+body.wpasb-sb-brand #adminmenu a.wp-has-current-submenu:focus + .wp-submenu a:focus,
+body.wpasb-sb-brand #adminmenu a.wp-has-current-submenu:focus + .wp-submenu a:hover,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu.opensub .wp-submenu a:focus,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu.opensub .wp-submenu a:hover,
+body.wpasb-sb-brand #adminmenu .wp-submenu li.current a,
+body.wpasb-sb-brand #adminmenu a.wp-has-current-submenu:focus + .wp-submenu li.current a,
+body.wpasb-sb-brand #adminmenu .wp-has-current-submenu.opensub .wp-submenu li.current a,
+body.wpasb-sb-brand #adminmenu .wp-submenu li.current a:hover,
+body.wpasb-sb-brand #adminmenu .wp-submenu li.current a:focus {
+	color: var(--wpasb-sub-ink);
+}
+
+body.wpasb-sb-brand #adminmenu .wp-submenu li.current a {
+	font-weight: 600;
+}
+
+/* Active item */
+body.wpasb-sb-brand #adminmenu li.current a.menu-top,
+body.wpasb-sb-brand #adminmenu li.wp-has-current-submenu a.wp-has-current-submenu,
+body.wpasb-sb-brand #adminmenu li.wp-has-current-submenu .wp-submenu .wp-submenu-head,
+body.wpasb-sb-brand.folded #adminmenu li.current.menu-top {
+	color: var(--wpasb-act-ink);
+	background: var(--wpasb-act-bg);
+}
+
+body.wpasb-sb-brand #adminmenu li.wp-has-current-submenu div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu a.current:hover div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu li.current div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu li.wp-has-current-submenu a:focus div.wp-menu-image:before,
+body.wpasb-sb-brand #adminmenu li.wp-has-current-submenu.opensub div.wp-menu-image:before {
+	color: var(--wpasb-act-ink);
+}
+
+/* Count bubbles on the active item and on hover. */
+body.wpasb-sb-brand #adminmenu li.current a .awaiting-mod,
+body.wpasb-sb-brand #adminmenu li a.wp-has-current-submenu .update-plugins,
+body.wpasb-sb-brand #adminmenu li:hover a .awaiting-mod,
+body.wpasb-sb-brand #adminmenu li.menu-top:hover > a .update-plugins {
+	color: var(--wpasb-sub-ink);
+	background: var(--wpasb-sub-bg);
+}
+
+/* Collapse button */
+body.wpasb-sb-brand #collapse-button {
+	color: var(--wpasb-sb-muted);
+}
+
+body.wpasb-sb-brand #collapse-button:hover,
+body.wpasb-sb-brand #collapse-button:focus {
+	color: var(--wpasb-sb-ink);
+	background: var(--wpasb-sb-hover);
+}

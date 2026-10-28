@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 return [
 	'slug'        => 'admin-menu-editor',
 	'name'        => 'Admin Menu Editor',
-	'description' => 'Hide items from the wp-admin sidebar and block the pages behind them, for everyone except administrators. Pick the items under Speedboost > Admin Menu. This hides menus and pages, it does not remove user capabilities.',
+	'description' => 'Hide items from the wp-admin sidebar and block the pages behind them, for everyone except administrators. Pick the items under Speedboost > Admin Menu. This hides menus and pages, it does not remove user capabilities. The same screen also offers a comfortable (wider) sidebar and brand colours for it.',
 	'default'     => false,
 	'init'        => 'wpasb_admin_menu_init',
 ];

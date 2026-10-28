@@ -62,6 +62,27 @@ class WPASB_Admin_Menu_Page {
 				'show_in_rest'      => false,
 			]
 		);
+
+		register_setting(
+			self::GROUP,
+			WPASB_Admin_Sidebar::OPT,
+			[
+				'type'              => 'array',
+				'sanitize_callback' => [ $this, 'sanitize_style' ],
+				'default'           => WPASB_Admin_Sidebar::defaults(),
+				'show_in_rest'      => false,
+			]
+		);
+	}
+
+	public function sanitize_style( $input ) {
+		$current = WPASB_Admin_Sidebar::get_settings();
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $current;
+		}
+
+		return WPASB_Admin_Sidebar::sanitize_input( $input, $current );
 	}
 
 	public static function encode_child( $parent, $child ) {
@@ -355,6 +376,7 @@ class WPASB_Admin_Menu_Page {
 					'moved'         => __( '%1$s moved to position %2$d of %3$d.', 'wp-admin-speedboost' ),
 					'orderReset'    => __( 'Original order restored. Save to keep it.', 'wp-admin-speedboost' ),
 				],
+				'style' => WPASB_Admin_Sidebar::get_settings(),
 			]
 		);
 	}
@@ -675,6 +697,87 @@ class WPASB_Admin_Menu_Page {
 		<?php
 	}
 
+	/**
+	 * Sidebar style: comfortable width and brand colours. Fields post with
+	 * the menu form; the switches preview live on this screen.
+	 */
+	private function render_style( array $style ) {
+		$name   = WPASB_Admin_Sidebar::OPT;
+		$colors = [
+			'sidebar' => __( 'Sidebar', 'wp-admin-speedboost' ),
+			'submenu' => __( 'Submenu', 'wp-admin-speedboost' ),
+			'active'  => __( 'Active item', 'wp-admin-speedboost' ),
+		];
+		$defaults = WPASB_Admin_Sidebar::defaults();
+		?>
+		<section class="wpasb-sidebar-style" id="wpasb-sidebar-style" aria-labelledby="wpasb-sidebar-style-title">
+			<input type="hidden" name="<?php echo esc_attr( $name ); ?>[present]" value="1">
+			<div class="wpasb-sidebar-style-head">
+				<h2 class="wpasb-section-title" id="wpasb-sidebar-style-title"><?php esc_html_e( 'Sidebar style', 'wp-admin-speedboost' ); ?></h2>
+				<p class="wpasb-section-desc"><?php esc_html_e( 'Changes show on the sidebar right away. Save to keep them. They apply to every user.', 'wp-admin-speedboost' ); ?></p>
+			</div>
+
+			<div class="wpasb-sidebar-style-row">
+				<label class="wpasb-toggle" for="wpasb-sb-comfortable">
+					<span class="screen-reader-text"><?php esc_html_e( 'Comfortable sidebar', 'wp-admin-speedboost' ); ?></span>
+					<input type="checkbox" id="wpasb-sb-comfortable" class="wpasb-module-input wpasb-style-input"
+						name="<?php echo esc_attr( $name ); ?>[comfortable]" value="1"
+						data-initial="<?php echo $style['comfortable'] ? '1' : '0'; ?>"
+						<?php checked( $style['comfortable'] ); ?>>
+					<span class="wpasb-toggle-slider" aria-hidden="true"></span>
+				</label>
+				<div class="wpasb-sidebar-style-text">
+					<p class="wpasb-sidebar-style-label"><?php esc_html_e( 'Comfortable sidebar', 'wp-admin-speedboost' ); ?></p>
+					<p class="wpasb-sidebar-style-help">
+						<?php
+						printf(
+							/* translators: %d: sidebar width in pixels */
+							esc_html__( 'A wider sidebar (%dpx instead of 160px) with more room between items. Desktop screens only; the folded and mobile menus stay as they are.', 'wp-admin-speedboost' ),
+							(int) WPASB_Admin_Sidebar::WIDTH
+						);
+						?>
+					</p>
+				</div>
+			</div>
+
+			<div class="wpasb-sidebar-style-row">
+				<label class="wpasb-toggle" for="wpasb-sb-brand">
+					<span class="screen-reader-text"><?php esc_html_e( 'Brand colours', 'wp-admin-speedboost' ); ?></span>
+					<input type="checkbox" id="wpasb-sb-brand" class="wpasb-module-input wpasb-style-input"
+						name="<?php echo esc_attr( $name ); ?>[brand]" value="1"
+						data-initial="<?php echo $style['brand'] ? '1' : '0'; ?>"
+						aria-controls="wpasb-sb-colors"
+						<?php checked( $style['brand'] ); ?>>
+					<span class="wpasb-toggle-slider" aria-hidden="true"></span>
+				</label>
+				<div class="wpasb-sidebar-style-text">
+					<p class="wpasb-sidebar-style-label"><?php esc_html_e( 'Brand colours', 'wp-admin-speedboost' ); ?></p>
+					<p class="wpasb-sidebar-style-help"><?php esc_html_e( 'Your own colours for the sidebar, its submenus and the active item. Text colour is picked automatically so it stays readable.', 'wp-admin-speedboost' ); ?></p>
+
+					<div class="wpasb-sb-colors" id="wpasb-sb-colors"<?php echo $style['brand'] ? '' : ' hidden'; ?>>
+						<?php foreach ( $colors as $key => $label ) : ?>
+							<?php $id = 'wpasb-sb-color-' . $key; ?>
+							<div class="wpasb-sb-color">
+								<label class="wpasb-sb-color-label" for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></label>
+								<span class="wpasb-sb-color-field">
+									<input type="color" id="<?php echo esc_attr( $id ); ?>" class="wpasb-style-input wpasb-sb-color-input"
+										name="<?php echo esc_attr( $name ); ?>[<?php echo esc_attr( $key ); ?>]"
+										value="<?php echo esc_attr( $style[ $key ] ); ?>"
+										data-key="<?php echo esc_attr( $key ); ?>"
+										data-initial="<?php echo esc_attr( $style[ $key ] ); ?>"
+										data-default="<?php echo esc_attr( $defaults[ $key ] ); ?>">
+									<code class="wpasb-sb-color-hex" aria-hidden="true"><?php echo esc_html( $style[ $key ] ); ?></code>
+								</span>
+							</div>
+						<?php endforeach; ?>
+						<button type="button" class="wpasb-btn wpasb-btn--ghost wpasb-sb-reset" id="wpasb-sb-reset"><?php esc_html_e( 'Reset to WordPress colours', 'wp-admin-speedboost' ); ?></button>
+					</div>
+				</div>
+			</div>
+		</section>
+		<?php
+	}
+
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-admin-speedboost' ) );
@@ -720,6 +823,8 @@ class WPASB_Admin_Menu_Page {
 					<?php settings_fields( self::GROUP ); ?>
 					<input type="hidden" name="<?php echo esc_attr( WPASB_Admin_Menu::OPT ); ?>[order_mode]" id="wpasb-menu-order-mode" value="keep">
 					<input type="hidden" name="<?php echo esc_attr( WPASB_Admin_Menu::OPT ); ?>[layout]" id="wpasb-menu-layout" value="" disabled>
+
+					<?php $this->render_style( WPASB_Admin_Sidebar::get_settings() ); ?>
 
 					<div class="wpasb-module-toolbar">
 						<div class="wpasb-module-toolbar-text">

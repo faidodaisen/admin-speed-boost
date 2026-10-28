@@ -30,6 +30,98 @@
 		return Array.prototype.slice.call( list );
 	}
 
+	/*
+	 * Sidebar style preview. palette() mirrors WPASB_Admin_Sidebar::palette()
+	 * so the preview matches what the saved settings print.
+	 */
+	var INK_LIGHT = '#ffffff';
+	var INK_DARK  = '#1d2327';
+
+	function rgb( hex ) {
+		var h = String( hex || '' ).replace( '#', '' );
+		if ( 3 === h.length ) {
+			h = h.charAt( 0 ) + h.charAt( 0 ) + h.charAt( 1 ) + h.charAt( 1 ) + h.charAt( 2 ) + h.charAt( 2 );
+		}
+		if ( ! /^[0-9a-f]{6}$/i.test( h ) ) {
+			return [ 0, 0, 0 ];
+		}
+		return [ parseInt( h.substr( 0, 2 ), 16 ), parseInt( h.substr( 2, 2 ), 16 ), parseInt( h.substr( 4, 2 ), 16 ) ];
+	}
+
+	function luminance( hex ) {
+		var c = rgb( hex ).map( function ( v ) {
+			v /= 255;
+			return v <= 0.03928 ? v / 12.92 : Math.pow( ( v + 0.055 ) / 1.055, 2.4 );
+		} );
+		return 0.2126 * c[ 0 ] + 0.7152 * c[ 1 ] + 0.0722 * c[ 2 ];
+	}
+
+	function contrast( a, b ) {
+		var la = luminance( a );
+		var lb = luminance( b );
+		return ( Math.max( la, lb ) + 0.05 ) / ( Math.min( la, lb ) + 0.05 );
+	}
+
+	function ink( bg ) {
+		return contrast( bg, INK_LIGHT ) >= contrast( bg, INK_DARK ) ? INK_LIGHT : INK_DARK;
+	}
+
+	function mix( a, b, amount ) {
+		var x = rgb( a );
+		var y = rgb( b );
+		return '#' + x.map( function ( v, i ) {
+			var n = Math.round( v + ( y[ i ] - v ) * amount );
+			return ( n < 16 ? '0' : '' ) + n.toString( 16 );
+		} ).join( '' );
+	}
+
+	function palette( s ) {
+		var sbInk  = ink( s.sidebar );
+		var subInk = ink( s.submenu );
+		return {
+			'sb-bg': s.sidebar,
+			'sb-ink': sbInk,
+			'sb-muted': mix( s.sidebar, sbInk, 0.72 ),
+			'sb-hover': mix( s.sidebar, sbInk, 0.08 ),
+			'sub-bg': s.submenu,
+			'sub-ink': subInk,
+			'sub-muted': mix( s.submenu, subInk, 0.72 ),
+			'act-bg': s.active,
+			'act-ink': ink( s.active )
+		};
+	}
+
+	function previewStyle( styles ) {
+		var body   = document.body;
+		var values = {};
+		var root   = document.documentElement.style;
+		var panel  = document.getElementById( 'wpasb-sb-colors' );
+
+		styles.forEach( function ( input ) {
+			if ( 'wpasb-sb-comfortable' === input.id ) {
+				body.classList.toggle( 'wpasb-sb-comfy', input.checked );
+			} else if ( 'wpasb-sb-brand' === input.id ) {
+				body.classList.toggle( 'wpasb-sb-brand', input.checked );
+				if ( panel ) {
+					panel.hidden = ! input.checked;
+				}
+			} else if ( input.getAttribute( 'data-key' ) ) {
+				values[ input.getAttribute( 'data-key' ) ] = input.value.toLowerCase();
+				var hex = input.parentNode.querySelector( '.wpasb-sb-color-hex' );
+				if ( hex ) {
+					hex.textContent = input.value.toLowerCase();
+				}
+			}
+		} );
+
+		if ( values.sidebar && values.submenu && values.active ) {
+			var p = palette( values );
+			Object.keys( p ).forEach( function ( name ) {
+				root.setProperty( '--wpasb-' + name, p[ name ] );
+			} );
+		}
+	}
+
 	function init() {
 		var form = document.getElementById( 'wpasb-menu-form' );
 		if ( ! form ) {
@@ -49,6 +141,7 @@
 		var resetBtn  = document.getElementById( 'wpasb-menu-reset-order' );
 		var moveLive  = document.getElementById( 'wpasb-menu-move-status' );
 		var labels    = toArray( form.querySelectorAll( '.wpasb-menu-label-input' ) );
+		var styles    = toArray( form.querySelectorAll( '.wpasb-style-input' ) );
 		var submitting = false;
 
 		// Every sortable list: the top level plus each submenu.
@@ -107,7 +200,12 @@
 				return input.value.trim() !== ( input.getAttribute( 'data-initial' ) || '' );
 			} );
 			var reorder = modeEl && modeEl.value !== initialMode;
-			return changed || renamed || reorder || ( scope && scope.checked !== initialOf( scope ) );
+			var styled  = styles.some( function ( input ) {
+				return 'checkbox' === input.type
+					? input.checked !== initialOf( input )
+					: input.value.toLowerCase() !== ( input.getAttribute( 'data-initial' ) || '' );
+			} );
+			return changed || renamed || reorder || styled || ( scope && scope.checked !== initialOf( scope ) );
 		}
 
 		function sync() {
@@ -188,13 +286,19 @@
 		}
 
 		form.addEventListener( 'change', function ( event ) {
-			if ( event.target.classList.contains( 'wpasb-menu-input' ) || event.target === scope ) {
+			if ( event.target.classList.contains( 'wpasb-style-input' ) ) {
+				previewStyle( styles );
+				sync();
+			} else if ( event.target.classList.contains( 'wpasb-menu-input' ) || event.target === scope ) {
 				sync();
 			}
 		} );
 
 		form.addEventListener( 'input', function ( event ) {
-			if ( event.target.classList.contains( 'wpasb-menu-label-input' ) ) {
+			if ( event.target.classList.contains( 'wpasb-sb-color-input' ) ) {
+				previewStyle( styles );
+				sync();
+			} else if ( event.target.classList.contains( 'wpasb-menu-label-input' ) ) {
 				syncLabel( event.target );
 				sync();
 			}
@@ -248,6 +352,14 @@
 				if ( scope ) {
 					scope.checked = initialOf( scope );
 				}
+				styles.forEach( function ( input ) {
+					if ( 'checkbox' === input.type ) {
+						input.checked = initialOf( input );
+					} else {
+						input.value = input.getAttribute( 'data-initial' ) || input.value;
+					}
+				} );
+				previewStyle( styles );
 				restoreOrder( initialOrder );
 				setMode( initialMode );
 				sync();
@@ -268,6 +380,19 @@
 				if ( moveLive ) {
 					moveLive.textContent = t( 'orderReset', 'Original order restored. Save to keep it.' );
 				}
+			} );
+		}
+
+		var styleReset = document.getElementById( 'wpasb-sb-reset' );
+		if ( styleReset ) {
+			styleReset.addEventListener( 'click', function () {
+				styles.forEach( function ( input ) {
+					if ( input.hasAttribute( 'data-default' ) ) {
+						input.value = input.getAttribute( 'data-default' );
+					}
+				} );
+				previewStyle( styles );
+				sync();
 			} );
 		}
 

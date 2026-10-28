@@ -4,7 +4,7 @@ Tags: performance, admin, optimization, speed, duplicate post
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.1
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -135,6 +135,11 @@ Add `define( 'WPASB_DISABLE_HIDE_LOGIN', true );` to wp-config.php, or rename th
 OPTIMIZE TABLE on InnoDB triggers a full table rebuild and locks the table, which is risky on a live site and reclaims little space. InnoDB manages its own free space. Set the `wpasb_optimize_innodb` filter to true to force it.
 
 == Changelog ==
+
+= 1.10.0 =
+* Added: Comfortable sidebar. On Speedboost > Admin Menu, switch it on for a wider sidebar (200px instead of 160px) with more room between items. Desktop screens only; the folded and mobile menus are unchanged. The block editor and WooCommerce admin follow the new width.
+* Added: Brand colours for the sidebar, its submenus and the active item, set with three colour pickers. Text and icon colours are picked automatically so they stay readable, including on a light sidebar. Reset to WordPress colours puts the defaults back.
+* Both settings preview live on the sidebar before you save, apply to every user, and are part of the Admin Menu Editor module.
 
 = 1.9.1 =
 * Security: Hide Login URL could be bypassed. A request to wp-login.php?action=postpass that also posted action=login reached the real login form and signed in, so wp-login.php stayed open to brute force. Only a genuine password-protected post submission now passes through.

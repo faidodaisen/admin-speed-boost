@@ -22,6 +22,7 @@ function wpasb_uninstall_cleanup() {
 	delete_option( 'wpasb_update_source' );
 	delete_option( 'wpasb_admin_menu' );
 	delete_option( 'wpasb_admin_menu_snapshot' );
+	delete_option( 'wpasb_sidebar_style' );
 	delete_transient( 'wpasb_update_check' );
 
 	$user_transients = $wpdb->get_col(
